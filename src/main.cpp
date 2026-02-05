@@ -80,6 +80,12 @@ void printMode() {
     }
 }
 
+void drawTransitionIcon(int x,int y) {
+    DrawLineBezier({static_cast<float>(x - 15),static_cast<float>(y - 15)},{static_cast<float>(x - 15),static_cast<float>(y + 15)},{static_cast<float>(x + 10),static_cast<float>(y + 15)},3,BLACK);
+    //IMPORTANT! Triangle vertices MUST be specified counter clock wise!
+    DrawTriangle({static_cast<float>(x + 10),static_cast<float>(y + 18)},{static_cast<float>(x+20),static_cast<float>(y + 15)},{static_cast<float>(x + 10),static_cast<float>(y + 10)},BLACK);
+}
+
 void init_app() {
     if (filesystem::exists("../assets") == false) {
         assetPathPrefix = "assets/";
@@ -95,6 +101,8 @@ void init_app() {
 
 bool app_loop() {
     float relDt = GetFrameTime() * 60.0f; // Calculate delta time in relation to 60 frames per second
+
+    bool buttonClicked = false;
     
     BeginDrawing();
     ClearBackground({255, 228, 209,255});
@@ -130,6 +138,80 @@ bool app_loop() {
         }
     }
 
+    //mode switching UI
+    if (GuiButton({10,10,40,40},"#67#")) {
+        //pan mode
+        buttonClicked = true;
+        currentMode = PAN;
+    }
+
+    if (GuiButton({55,10,40,40},"")) {
+        //new state
+        buttonClicked = true;
+        currentMode = NEW_STATE;
+    }
+    DrawCircle(75,30,17,WHITE);
+    DrawRing({75,30},16,18,0,360,50,BLACK);
+    DrawText("+",64,12,40,BLACK);
+
+    if (GuiButton({100,10,40,40},"")) {
+        //new transition
+        buttonClicked = true;
+        currentMode = NEW_TRANSITION;
+    }
+    drawTransitionIcon(120,30);
+    DrawText("+",109,12,40,{50,50,50,255});
+
+    if (GuiButton({145,10,40,40},"")) {
+        //move state
+        buttonClicked = true;
+        currentMode = MOVE_STATE;
+    }
+    DrawCircle(165,30,17,WHITE);
+    DrawRing({165,30},16,18,0,360,50,BLACK);
+    GuiDrawIcon(68,148,13,2,BLACK);//move icon
+
+    if (GuiButton({190,10,40,40},"")) {
+        //move transition
+        buttonClicked = true;
+        currentMode = MOVE_TRANSITION;
+    }
+    drawTransitionIcon(210,30);
+    GuiDrawIcon(68,193,13,2,{80,80,80,255});//move icon
+
+    if (GuiButton({235,10,40,40},"")) {
+        //Edit transition
+        buttonClicked = true;
+        currentMode = EDIT_TRANSITION;
+    }
+    drawTransitionIcon(255,30);
+    GuiDrawIcon(23,238,13,2,{80,80,80,255});//move icon
+
+    if (GuiButton({280,10,40,40},"")) {
+        //Delete State
+        buttonClicked = true;
+        currentMode = DELETE_STATE;
+    }
+    DrawCircle(300,30,17,WHITE);
+    DrawRing({300,30},16,18,0,360,50,BLACK);
+    GuiDrawIcon(143,285,13,2,BLACK);
+
+    if (GuiButton({325,10,40,40},"")) {
+        //Delete transition
+        buttonClicked = true;
+        currentMode = DELETE_TRANSITION;
+    }
+    drawTransitionIcon(345,30);
+    GuiDrawIcon(143,330,13,2,{80,80,80,255});
+    //end of mode switch ui
+
+    if (buttonClicked) {
+        printMode();
+        EndDrawing();
+        return true;
+    }
+
+    //mode specific opperation ui
     if (currentMode == NEW_TRANSITION) {
         if (addTransitionPart > 0) {
             if (addTransitionPart == 1) {
@@ -368,6 +450,12 @@ bool app_loop() {
         printMode();
         movingThingIndex = -1;
         moveThingSubIndex = -1;
+    }
+
+    //dont process further if the mouse is in the button area
+    Vector2 areaMouse = GetMousePosition();
+    if (areaMouse.x >= 10 && areaMouse.x <=365 && areaMouse.y >= 10 && areaMouse.y <=50) {
+        return true;
     }
 
     if (currentMode == PAN) {
