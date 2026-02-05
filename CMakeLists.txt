@@ -31,7 +31,9 @@ add_executable(${CMAKE_PROJECT_NAME} ${APP_SOURCES}
         src/State.cpp
         src/State.h
         src/Transition.cpp
-        src/Transition.h)
+        src/Transition.h
+        src/Font.cpp
+        src/Font.h)
 
 add_dependencies(${CMAKE_PROJECT_NAME} copy_assets)
 

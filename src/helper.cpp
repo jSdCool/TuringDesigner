@@ -2,6 +2,7 @@
 
 #include "../libs/raylib/src/raylib.h"
 #include "helper.hpp"
+#include "main.hpp"
 
 #include <cmath>
 #include <vector>
@@ -35,7 +36,7 @@ int getBrowserWindowHeight() {
 // Draw text centered horizontally. Included because I use it all the time.
 void DrawTextCentered(std::string &text, int posX, int posY, int fontSize, Color color) {
     int textWidth = MeasureText(text.c_str(), fontSize);
-    DrawText(text.c_str(), posX-(textWidth/2), posY, fontSize, color);
+    DrawText(getModifiedFont(),text.c_str(), posX-(textWidth/2), posY, fontSize, color);
 }
 
 Vector2 quadritcLerp(const Vector2 start, const Vector2 mid, const Vector2 end, const float t) {
@@ -135,4 +136,18 @@ void DrawLineBezier(const Vector2 start, const Vector2 mid1, const Vector2 mid2,
     }
 
     DrawTriangleStrip(points.data(), 2*SEGMENTS + 2, color);
+}
+
+void DrawText(Font font,const char *text, int posX, int posY, int fontSize, Color color) {
+    // Check if default font has been loaded
+    if (GetFontDefault().texture.id != 0)
+    {
+        Vector2 position = { (float)posX, (float)posY };
+
+        int defaultFontSize = 10;   // Default Font chars height in pixel
+        if (fontSize < defaultFontSize) fontSize = defaultFontSize;
+        int spacing = fontSize/defaultFontSize;
+
+        DrawTextEx(font, text, position, (float)fontSize, (float)spacing, color);
+    }
 }

@@ -15,5 +15,6 @@ void DrawLineBezier(Vector2 start, Vector2 mid, Vector2 end, float thickness, Co
 void DrawLineBezier(Vector2 start, Vector2 mid1, Vector2 mid2, Vector2 end, float thickness, Color color);
 Vector2 quadritcLerp(Vector2 start, Vector2 mid, Vector2 end, float t);
 Vector2 cubicLerp(Vector2 start, Vector2 mid1, Vector2 mid2, Vector2 end, float t);
+void DrawText(Font font,const char *text, int posX, int posY, int fontSize, Color color);
 
 #endif

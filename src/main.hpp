@@ -14,6 +14,6 @@ bool app_loop();
 // Free up allocated memory
 void deinit_app();
 
-
+Font getModifiedFont();
 
 #endif

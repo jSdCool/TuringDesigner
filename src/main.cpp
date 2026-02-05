@@ -11,6 +11,7 @@
 #include "raymath.h"
 #include "State.h"
 #include "Transition.h"
+#include "Font.h"
 
 using namespace std;
 
@@ -50,6 +51,8 @@ char inputText[500]={0};
 Color guiBackground = { 200, 200, 225, 255 };
 int movingThingIndex =-1;
 int moveThingSubIndex = -1;
+
+Font customFont;
 
 void printMode() {
     switch (currentMode) {
@@ -92,11 +95,13 @@ void init_app() {
     }
     
     // Load textures here
-    
+    customFont = createModifiedFont();
+
     // InitAudioDevice();
     // Load sounds/music here
     GuiSetIconScale(2);
     GuiSetStyle(DEFAULT,TEXT_SIZE,25);
+    GuiSetFont(customFont);
 }
 
 bool app_loop() {
@@ -106,6 +111,7 @@ bool app_loop() {
     
     BeginDrawing();
     ClearBackground({255, 228, 209,255});
+
 
     for (Transition &t : transitions) {
         if (((currentMode == EDIT_TRANSITION || currentMode == MOVE_TRANSITION)&& movingThingIndex == -1) || currentMode == DELETE_TRANSITION) {
@@ -646,6 +652,10 @@ bool app_loop() {
 
 void deinit_app() {
     // Unload assets here
-
+    UnloadCustomFont(customFont);
     // CloseAudioDevice();
+}
+
+Font getModifiedFont() {
+    return customFont;
 }
