@@ -12,7 +12,10 @@ public:
     void draw(float scale,Vector2 offset,bool highlight) const;
     [[nodiscard]] bool mouseOver(float x, float y) const;
     void updatePosition(int x, int y);
-    Vector2 getPosition() const;
+    [[nodiscard]] Vector2 getPosition() const;
+    void decreaseId() {
+        id --;
+    }
 };
 
 

@@ -49,6 +49,7 @@ TransitionCreateInfo newTransitionInfo;
 char inputText[500]={0};
 Color guiBackground = { 200, 200, 225, 255 };
 int movingThingIndex =-1;
+int moveThingSubIndex = -1;
 
 void printMode() {
     switch (currentMode) {
@@ -99,7 +100,7 @@ bool app_loop() {
     ClearBackground({255, 228, 209,255});
 
     for (Transition &t : transitions) {
-        if (currentMode == EDIT_TRANSITION && movingThingIndex == -1) {
+        if (((currentMode == EDIT_TRANSITION || currentMode == MOVE_TRANSITION)&& movingThingIndex == -1) || currentMode == DELETE_TRANSITION) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
@@ -114,7 +115,19 @@ bool app_loop() {
     }
 
     for (State &state : states) {
-        state.draw(scale,offset,false);
+        if ((currentMode == MOVE_STATE && movingThingIndex == -1) || currentMode == DELETE_STATE) {
+            Vector2 mouse = GetMousePosition();
+            mouse = Vector2Scale(mouse,1/scale);
+            mouse = Vector2Subtract(mouse,offset);
+
+            if (state.mouseOver(mouse.x,mouse.y)) {
+                state.draw(scale,offset,true);
+            } else {
+                state.draw(scale,offset,false);
+            }
+        } else {
+            state.draw(scale,offset,false);
+        }
     }
 
     if (currentMode == NEW_TRANSITION) {
@@ -203,7 +216,23 @@ bool app_loop() {
             states[movingThingIndex].updatePosition(static_cast<int>(mouse.x),static_cast<int>(mouse.y));
         }
     } else if (currentMode == MOVE_TRANSITION) {
-        //TODO
+        if (movingThingIndex != -1) {
+            Vector2 mouse = GetMousePosition();
+            mouse = Vector2Scale(mouse,1/scale);
+            mouse = Vector2Subtract(mouse,offset);
+            //draw the points
+            for (Vector2 midPoint: transitions[movingThingIndex].getMidPoints()) {
+                bool mouseOver = Vector2Distance(mouse,midPoint) < 15;
+                midPoint = Vector2Add(midPoint,offset);
+                midPoint = Vector2Scale(midPoint,scale);
+                Color color = mouseOver ? Color{40,0,210,128} : Color{40,210,0,128};
+                DrawCircleV(midPoint,15*scale,color);
+            }
+
+            if (moveThingSubIndex != -1) {
+                transitions[movingThingIndex].setMidPoint(mouse,moveThingSubIndex);
+            }
+        }
     } else if (currentMode == EDIT_TRANSITION) {
         if (addTransitionPart == 3) {
             DrawRectangle(100,100,1080,520,guiBackground);
@@ -308,6 +337,7 @@ bool app_loop() {
         }
         printMode();
         movingThingIndex = -1;
+        moveThingSubIndex = -1;
     } else if ((IsMouseButtonPressed(MOUSE_BUTTON_SIDE) || IsKeyPressed(KEY_LEFT_BRACKET)) && addTransitionPart == 0) {
         switch (currentMode) {
             case PAN:
@@ -337,6 +367,7 @@ bool app_loop() {
         }
         printMode();
         movingThingIndex = -1;
+        moveThingSubIndex = -1;
     }
 
     if (currentMode == PAN) {
@@ -404,7 +435,36 @@ bool app_loop() {
             movingThingIndex = -1;
         }
     } else if (currentMode == MOVE_TRANSITION) {
-        //TODO
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && movingThingIndex == -1) {
+            Vector2 mouse = GetMousePosition();
+            mouse = Vector2Scale(mouse,1/scale);
+            mouse = Vector2Subtract(mouse,offset);
+            for (size_t i = 0; i < transitions.size(); i++) {
+                if (transitions[i].mouseOverText(mouse,states)) {
+                    movingThingIndex = static_cast<int>(i);
+                    TextCopy(inputText,newTransitionInfo.match.c_str());
+                    break;
+                }
+            }
+        } else if (movingThingIndex != -1) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                Vector2 mouse = GetMousePosition();
+                mouse = Vector2Scale(mouse,1/scale);
+                mouse = Vector2Subtract(mouse,offset);
+
+                for (size_t i = 0; i < transitions[movingThingIndex].getMidPoints().size(); i++) {
+                    if (Vector2Distance(mouse,transitions[movingThingIndex].getMidPoints()[i]) < 15) {
+                        moveThingSubIndex = static_cast<int>(i);
+                        break;
+                    }
+                }
+                if (moveThingSubIndex == -1) {
+                    movingThingIndex = -1;
+                }
+            } else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                moveThingSubIndex = -1;
+            }
+        }
     } else if (currentMode == EDIT_TRANSITION) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && movingThingIndex == -1) {
             Vector2 mouse = GetMousePosition();
@@ -427,23 +487,41 @@ bool app_loop() {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
+            bool found = false;
             for (size_t i = 0; i < states.size(); i++) {
-                if (states[i].mouseOver(mouse.x,mouse.y)) {
-                    for (size_t j = 0; j < transitions.size(); j++) {
-                        if (transitions[j].getStartIndex()==i || transitions[j].getEndIndex()==i) {
-                            transitions.erase(transitions.begin()+static_cast<long long>(j));
-                            j--;
-                            continue;
+                if (found) {
+                    states[i].decreaseId();
+                } else {
+                    if (states[i].mouseOver(mouse.x,mouse.y)) {
+                        for (size_t j = 0; j < transitions.size(); j++) {
+                            if (transitions[j].getStartIndex()==i || transitions[j].getEndIndex()==i) {
+                                transitions.erase(transitions.begin()+static_cast<long long>(j));
+                                j--;
+                                continue;
+                            }
+                            if (transitions[j].getEndIndex()>i) {
+                                transitions[j].decreaseEndIndex();
+                            }
+                            if (transitions[j].getStartIndex()>i) {
+                                transitions[j].decreaseStartIndex();
+                            }
                         }
-                        if (transitions[j].getEndIndex()>i) {
-                            transitions[j].decreaseEndIndex();
-                        }
-                        if (transitions[j].getStartIndex()>i) {
-                            transitions[j].decreaseStartIndex();
-                        }
+                        states.erase(states.begin()+static_cast<long long>(i));
+                        i--;
+                        found = true;
                     }
-                    states.erase(states.begin()+static_cast<long long>(i));
-                    break;
+                }
+            }
+        }
+    } else if (currentMode == DELETE_TRANSITION) {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            Vector2 mouse = GetMousePosition();
+            mouse = Vector2Scale(mouse,1/scale);
+            mouse = Vector2Subtract(mouse,offset);
+            for (size_t i = 0; i < transitions.size(); i++) {
+                if (transitions[i].mouseOverText(mouse,states)) {
+                    transitions.erase(transitions.begin()+static_cast<long long>(i));
+                    i--;
                 }
             }
         }

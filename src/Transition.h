@@ -69,4 +69,11 @@ public:
         toState--;
     }
 
+    std::vector<Vector2> getMidPoints() {
+        return midPoints;
+    }
+    void setMidPoint(Vector2 midPoint, int index) {
+        midPoints[index] = midPoint;
+    }
+
 };
