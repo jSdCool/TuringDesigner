@@ -139,12 +139,14 @@ bool app_loop() {
     }
 
     //mode switching UI
+    if (currentMode == PAN) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({10,10,40,40},"#67#")) {
         //pan mode
         buttonClicked = true;
         currentMode = PAN;
     }
 
+    if (currentMode == NEW_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({55,10,40,40},"")) {
         //new state
         buttonClicked = true;
@@ -154,6 +156,7 @@ bool app_loop() {
     DrawRing({75,30},16,18,0,360,50,BLACK);
     DrawText("+",64,12,40,BLACK);
 
+    if (currentMode == NEW_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({100,10,40,40},"")) {
         //new transition
         buttonClicked = true;
@@ -162,6 +165,7 @@ bool app_loop() {
     drawTransitionIcon(120,30);
     DrawText("+",109,12,40,{50,50,50,255});
 
+    if (currentMode == MOVE_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({145,10,40,40},"")) {
         //move state
         buttonClicked = true;
@@ -171,6 +175,7 @@ bool app_loop() {
     DrawRing({165,30},16,18,0,360,50,BLACK);
     GuiDrawIcon(68,148,13,2,BLACK);//move icon
 
+    if (currentMode == MOVE_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({190,10,40,40},"")) {
         //move transition
         buttonClicked = true;
@@ -179,6 +184,7 @@ bool app_loop() {
     drawTransitionIcon(210,30);
     GuiDrawIcon(68,193,13,2,{80,80,80,255});//move icon
 
+    if (currentMode == EDIT_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({235,10,40,40},"")) {
         //Edit transition
         buttonClicked = true;
@@ -187,6 +193,7 @@ bool app_loop() {
     drawTransitionIcon(255,30);
     GuiDrawIcon(23,238,13,2,{80,80,80,255});//move icon
 
+    if (currentMode == DELETE_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({280,10,40,40},"")) {
         //Delete State
         buttonClicked = true;
@@ -196,6 +203,7 @@ bool app_loop() {
     DrawRing({300,30},16,18,0,360,50,BLACK);
     GuiDrawIcon(143,285,13,2,BLACK);
 
+    if (currentMode == DELETE_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
     if (GuiButton({325,10,40,40},"")) {
         //Delete transition
         buttonClicked = true;
