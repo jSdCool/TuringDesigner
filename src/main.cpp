@@ -527,6 +527,23 @@ bool app_loop() {
         }
     }
 
+    //handle movement keys
+    if (addTransitionPart < 3) {
+        constexpr float keyPanSpeed = 0.4f;
+        if (IsKeyDown(KEY_LEFT)) {
+            offset.x += keyPanSpeed * 1/scale;
+        }
+        if (IsKeyDown(KEY_RIGHT)) {
+            offset.x -= keyPanSpeed * 1/scale;
+        }
+        if (IsKeyDown(KEY_UP)) {
+            offset.y += keyPanSpeed * 1/scale;
+        }
+        if (IsKeyDown(KEY_DOWN)) {
+            offset.y -= keyPanSpeed * 1/scale;
+        }
+    }
+
 
     return !windowShouldClose;
 }
