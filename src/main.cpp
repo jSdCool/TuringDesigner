@@ -7,6 +7,7 @@
 #include <string>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 
 #include "raymath.h"
 #include "State.h"
@@ -29,7 +30,8 @@ enum Mode {
     EDIT_TRANSITION,
     DELETE_STATE,
     DELETE_TRANSITION,
-    SET_START_STATE
+    SET_START_STATE,
+    NEW_HALT_TRANSITION
 };
 
 
@@ -38,10 +40,7 @@ enum Mode {
 string assetPathPrefix = "../assets/";
 
 vector <State> states = {{200,200,1},{400,300,2}};
-vector <Transition> transitions = {
-    {0,1,{{300,200}}},
-    {1,0,{{350,500},{70,350}}}
-};
+vector <unique_ptr<Transition>> transitions = {};
 
 float scale = 1;
 Vector2 offset = {0,0};
@@ -86,6 +85,8 @@ void printMode() {
             break;
         case SET_START_STATE:
             cout << "SET_START_STATE" << endl;
+        case NEW_HALT_TRANSITION:
+            cout << "NEW_HALT_TRANSITION" << endl;
     }
 }
 
@@ -119,23 +120,23 @@ bool app_loop() {
     ClearBackground({255, 228, 209,255});
 
 
-    for (Transition &t : transitions) {
+    for (unique_ptr<Transition> &t : transitions) {
         if (((currentMode == EDIT_TRANSITION || currentMode == MOVE_TRANSITION)&& movingThingIndex == -1) || currentMode == DELETE_TRANSITION) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
-            if (t.mouseOverText(mouse,states)) {
-                t.draw(scale,states,offset,true);
+            if (t->mouseOverText(mouse,states)) {
+                t->draw(scale,states,offset,true);
             } else {
-                t.draw(scale,states,offset,false);
+                t->draw(scale,states,offset,false);
             }
         } else {
-            t.draw(scale,states,offset,false);
+            t->draw(scale,states,offset,false);
         }
     }
 
     for (State &state : states) {
-        if ((currentMode == MOVE_STATE && movingThingIndex == -1) || currentMode == DELETE_STATE || currentMode == SET_START_STATE) {
+        if ((currentMode == MOVE_STATE && movingThingIndex == -1) || currentMode == DELETE_STATE || currentMode == SET_START_STATE || currentMode == NEW_HALT_TRANSITION) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
@@ -165,6 +166,9 @@ bool app_loop() {
         //pan mode
         buttonClicked = true;
         currentMode = PAN;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
 
     if (currentMode == NEW_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
@@ -172,6 +176,9 @@ bool app_loop() {
         //new state
         buttonClicked = true;
         currentMode = NEW_STATE;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     DrawCircle(75,30,17,WHITE);
     DrawRing({75,30},16,18,0,360,50,BLACK);
@@ -182,6 +189,9 @@ bool app_loop() {
         //new transition
         buttonClicked = true;
         currentMode = NEW_TRANSITION;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     drawTransitionIcon(120,30);
     DrawText("+",109,12,40,{50,50,50,255});
@@ -191,6 +201,9 @@ bool app_loop() {
         //move state
         buttonClicked = true;
         currentMode = MOVE_STATE;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     DrawCircle(165,30,17,WHITE);
     DrawRing({165,30},16,18,0,360,50,BLACK);
@@ -201,6 +214,9 @@ bool app_loop() {
         //move transition
         buttonClicked = true;
         currentMode = MOVE_TRANSITION;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     drawTransitionIcon(210,30);
     GuiDrawIcon(68,193,13,2,{80,80,80,255});//move icon
@@ -210,6 +226,9 @@ bool app_loop() {
         //Edit transition
         buttonClicked = true;
         currentMode = EDIT_TRANSITION;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     drawTransitionIcon(255,30);
     GuiDrawIcon(23,238,13,2,{80,80,80,255});//move icon
@@ -219,6 +238,9 @@ bool app_loop() {
         //Delete State
         buttonClicked = true;
         currentMode = DELETE_STATE;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     DrawCircle(300,30,17,WHITE);
     DrawRing({300,30},16,18,0,360,50,BLACK);
@@ -229,6 +251,9 @@ bool app_loop() {
         //Delete transition
         buttonClicked = true;
         currentMode = DELETE_TRANSITION;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     drawTransitionIcon(345,30);
     GuiDrawIcon(143,330,13,2,{80,80,80,255});
@@ -237,9 +262,25 @@ bool app_loop() {
         //Delete transition
         buttonClicked = true;
         currentMode = SET_START_STATE;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
     DrawTriangle({400,30},{390,20},{390,40},RED);
     DrawRectangleRec({375,27,16,6},RED);
+
+    if (currentMode == NEW_HALT_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (GuiButton({415,10,40,40},"")) {
+        //Delete transition
+        buttonClicked = true;
+        currentMode = NEW_HALT_TRANSITION;
+        movingThingIndex = -1;
+        moveThingSubIndex = -1;
+        addTransitionPart = 0;
+    }
+    DrawTriangle({428,30},{418,20},{418,40},BLACK);
+    string tmp = "Ha";
+    DrawTextCentered(tmp,441,20,20,BLACK);
 
     //end of mode switch ui
 
@@ -254,7 +295,7 @@ bool app_loop() {
         return true;
     }
     //mode specific opperation ui
-    if (currentMode == NEW_TRANSITION) {
+    if (currentMode == NEW_TRANSITION || currentMode == NEW_HALT_TRANSITION) {
         if (addTransitionPart > 0) {
             if (addTransitionPart == 1) {
                 Vector2 startPos = states[newTransitionInfo.startIndex].getPosition();
@@ -323,12 +364,20 @@ bool app_loop() {
                 if (GuiButton({515,350,50,50},"L")) {
                     newTransitionInfo.move = 'L';
                     addTransitionPart = 0;
-                    transitions.emplace_back(newTransitionInfo);
+                    if (currentMode == NEW_HALT_TRANSITION) {
+                        transitions.emplace_back(make_unique<HaltTransition>(newTransitionInfo));
+                    } else {
+                        transitions.emplace_back(make_unique<Transition>(newTransitionInfo));
+                    }
                 }
                 if (GuiButton({715,350,50,50},"R")) {
                     newTransitionInfo.move = 'R';
                     addTransitionPart = 0;
-                    transitions.emplace_back(newTransitionInfo);
+                    if (currentMode == NEW_HALT_TRANSITION) {
+                        transitions.emplace_back(make_unique<HaltTransition>(newTransitionInfo));
+                    } else {
+                        transitions.emplace_back(make_unique<Transition>(newTransitionInfo));
+                    }
                 }
             }
         }
@@ -345,7 +394,7 @@ bool app_loop() {
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
             //draw the points
-            for (Vector2 midPoint: transitions[movingThingIndex].getMidPoints()) {
+            for (Vector2 midPoint: transitions[movingThingIndex]->getMidPoints()) {
                 bool mouseOver = Vector2Distance(mouse,midPoint) < 15;
                 midPoint = Vector2Add(midPoint,offset);
                 midPoint = Vector2Scale(midPoint,scale);
@@ -354,7 +403,7 @@ bool app_loop() {
             }
 
             if (moveThingSubIndex != -1) {
-                transitions[movingThingIndex].setMidPoint(mouse,moveThingSubIndex);
+                transitions[movingThingIndex]->setMidPoint(mouse,moveThingSubIndex);
             }
         }
     } else if (currentMode == EDIT_TRANSITION) {
@@ -404,13 +453,13 @@ bool app_loop() {
             if (GuiButton({515,350,50,50},"L")) {
                 newTransitionInfo.move = 'L';
                 addTransitionPart = 0;
-                transitions[movingThingIndex].setTransitionRules(newTransitionInfo.match,newTransitionInfo.wright,newTransitionInfo.move);
+                transitions[movingThingIndex]->setTransitionRules(newTransitionInfo.match,newTransitionInfo.wright,newTransitionInfo.move);
                 movingThingIndex = -1;
             }
             if (GuiButton({715,350,50,50},"R")) {
                 newTransitionInfo.move = 'R';
                 addTransitionPart = 0;
-                transitions[movingThingIndex].setTransitionRules(newTransitionInfo.match,newTransitionInfo.wright,newTransitionInfo.move);
+                transitions[movingThingIndex]->setTransitionRules(newTransitionInfo.match,newTransitionInfo.wright,newTransitionInfo.move);
                 movingThingIndex = -1;
             }
         }
@@ -459,15 +508,20 @@ bool app_loop() {
                 currentMode = SET_START_STATE;
                 break;
             case SET_START_STATE:
+                currentMode = NEW_HALT_TRANSITION;
+                break;
+            case NEW_HALT_TRANSITION:
                 currentMode = PAN;
+                break;
         }
         printMode();
         movingThingIndex = -1;
         moveThingSubIndex = -1;
+        addTransitionPart = 0;
     } else if ((IsMouseButtonPressed(MOUSE_BUTTON_SIDE) || IsKeyPressed(KEY_LEFT_BRACKET)) && addTransitionPart == 0) {
         switch (currentMode) {
             case PAN:
-                currentMode = SET_START_STATE;
+                currentMode = NEW_HALT_TRANSITION;
                 break;
             case NEW_STATE:
                 currentMode = PAN;
@@ -492,15 +546,20 @@ bool app_loop() {
                 break;
             case SET_START_STATE:
                 currentMode = DELETE_TRANSITION;
+                break;
+            case NEW_HALT_TRANSITION:
+                currentMode = SET_START_STATE;
+                break;
         }
         printMode();
         movingThingIndex = -1;
         moveThingSubIndex = -1;
+        addTransitionPart = 0;
     }
 
     //dont process further if the mouse is in the button area
     Vector2 areaMouse = GetMousePosition();
-    if (areaMouse.x >= 10 && areaMouse.x <=410 && areaMouse.y >= 10 && areaMouse.y <=50) {
+    if (areaMouse.x >= 10 && areaMouse.x <=455 && areaMouse.y >= 10 && areaMouse.y <=50) {
         return true;
     }
 
@@ -518,7 +577,7 @@ bool app_loop() {
             states.emplace_back(static_cast<int>(mouse.x),static_cast<int>(mouse.y),static_cast<int>(states.size()+1));
 
         }
-    } else if (currentMode == NEW_TRANSITION) {
+    } else if (currentMode == NEW_TRANSITION || currentMode == NEW_HALT_TRANSITION) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
@@ -536,7 +595,11 @@ bool app_loop() {
             } else if (addTransitionPart == 1) {
                 //set the first mid point
                 newTransitionInfo.points.push_back(mouse);
-                addTransitionPart = 2;
+                if (currentMode == NEW_HALT_TRANSITION) {
+                    addTransitionPart = 3;
+                } else {
+                    addTransitionPart = 2;
+                }
             } else if (addTransitionPart == 2) {
                 bool skip = false;
                 //end state or second point
@@ -575,7 +638,7 @@ bool app_loop() {
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
             for (size_t i = 0; i < transitions.size(); i++) {
-                if (transitions[i].mouseOverText(mouse,states)) {
+                if (transitions[i]->mouseOverText(mouse,states)) {
                     movingThingIndex = static_cast<int>(i);
                     TextCopy(inputText,newTransitionInfo.match.c_str());
                     break;
@@ -587,8 +650,8 @@ bool app_loop() {
                 mouse = Vector2Scale(mouse,1/scale);
                 mouse = Vector2Subtract(mouse,offset);
 
-                for (size_t i = 0; i < transitions[movingThingIndex].getMidPoints().size(); i++) {
-                    if (Vector2Distance(mouse,transitions[movingThingIndex].getMidPoints()[i]) < 15) {
+                for (size_t i = 0; i < transitions[movingThingIndex]->getMidPoints().size(); i++) {
+                    if (Vector2Distance(mouse,transitions[movingThingIndex]->getMidPoints()[i]) < 15) {
                         moveThingSubIndex = static_cast<int>(i);
                         break;
                     }
@@ -606,11 +669,11 @@ bool app_loop() {
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
             for (size_t i = 0; i < transitions.size(); i++) {
-                if (transitions[i].mouseOverText(mouse,states)) {
+                if (transitions[i]->mouseOverText(mouse,states)) {
                     movingThingIndex = static_cast<int>(i);
-                    newTransitionInfo.match = transitions[i].getMatchRule();
-                    newTransitionInfo.wright = transitions[i].getWright();
-                    newTransitionInfo.move = transitions[i].getMove();
+                    newTransitionInfo.match = transitions[i]->getMatchRule();
+                    newTransitionInfo.wright = transitions[i]->getWright();
+                    newTransitionInfo.move = transitions[i]->getMove();
                     addTransitionPart = 3;
                     TextCopy(inputText,newTransitionInfo.match.c_str());
                     eatMousePress = true;
@@ -630,16 +693,16 @@ bool app_loop() {
                 } else {
                     if (states[i].mouseOver(mouse.x,mouse.y)) {
                         for (size_t j = 0; j < transitions.size(); j++) {
-                            if (transitions[j].getStartIndex()==i || transitions[j].getEndIndex()==i) {
+                            if (transitions[j]->getStartIndex()==i || transitions[j]->getEndIndex()==i) {
                                 transitions.erase(transitions.begin()+static_cast<long long>(j));
                                 j--;
                                 continue;
                             }
-                            if (transitions[j].getEndIndex()>i) {
-                                transitions[j].decreaseEndIndex();
+                            if (transitions[j]->getEndIndex()>i) {
+                                transitions[j]->decreaseEndIndex();
                             }
-                            if (transitions[j].getStartIndex()>i) {
-                                transitions[j].decreaseStartIndex();
+                            if (transitions[j]->getStartIndex()>i) {
+                                transitions[j]->decreaseStartIndex();
                             }
                         }
                         states.erase(states.begin()+static_cast<long long>(i));
@@ -660,7 +723,7 @@ bool app_loop() {
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
             for (size_t i = 0; i < transitions.size(); i++) {
-                if (transitions[i].mouseOverText(mouse,states)) {
+                if (transitions[i]->mouseOverText(mouse,states)) {
                     transitions.erase(transitions.begin()+static_cast<long long>(i));
                     i--;
                 }

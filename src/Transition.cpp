@@ -37,7 +37,7 @@ char Transition::getWright() const {
     return wright;
 }
 
-void Transition::draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) const {
+void Transition::draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) {
     Color color = highlight ? YELLOW : BLACK;
 
     Vector2 startC = states[fromState].getPosition();
@@ -131,7 +131,7 @@ bool Transition::mouseOverText(Vector2 mouse,std::vector<State> &states) {
     return mouse.x >= box.x && mouse.x <= box.x + box.width && mouse.y >= box.y && mouse.y <= box.y + box.height;
 }
 
-void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offset, bool highlight) const {
+void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offset, bool highlight) {
     Color color = highlight ? YELLOW : BLACK;
 
     Vector2 startC = states[fromState].getPosition();
@@ -153,22 +153,22 @@ void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offse
     double startAngle = atan2(startC.y - midPointsL[0].y, startC.x - midPointsL[0].x);
     Vector2 rotIn = getRotationCoord(startAngle, scale*30);
     Vector2 start = {startC.x + rotIn.x, startC.y+rotIn.y};
+    Vector2 lep = grotPoint(midPointsL[0],startAngle,scale*5);
 
-    DrawLineEx(start,midPointsL[0],scale*3,color);
-    Vector2 e1 = grotPoint(midPointsL[0],startAngle+PI+PI/6,scale*15);
-    Vector2 e2 = grotPoint(midPointsL[0],startAngle+PI-PI/6,scale*15);
+    DrawLineEx(start,lep,scale*3,color);
+    Vector2 e1 = grotPoint(midPointsL[0],startAngle+PI/6,scale*15);
+    Vector2 e2 = grotPoint(midPointsL[0],startAngle-PI/6,scale*15);
     DrawTriangle(midPointsL[0],e1,e2,color);
 
-    Vector2 midPoint = Vector2Add(start,midPointsL[0]);
-    midPoint = Vector2Scale(midPoint,0.5);
+    Vector2 midPoint  ={std::lerp(start.x,midPointsL[0].x,0.6f),std::lerp(start.y,midPointsL[0].y,0.6f)};
     std::string display = match+",";
     display += wright;
     display += ",";
     display += move;
     DrawTextCentered(display, static_cast<int>(midPoint.x),static_cast<int>(midPoint.y - 25*scale),static_cast<int>(scale * 20),BLUE);
-    Vector2 haltPoint = grotPoint(midPointsL[0],startAngle,scale*15);
+    Vector2 haltPoint = grotPoint(midPointsL[0],startAngle+PI,scale*30);
     std::string haltText = "Halt";
-    DrawTextCentered(haltText,static_cast<int>(haltPoint.x),static_cast<int>(haltPoint.y),static_cast<int>(25 * scale),BLACK);
+    DrawTextCentered(haltText,static_cast<int>(haltPoint.x),static_cast<int>(haltPoint.y-10*scale),static_cast<int>(25 * scale),BLACK);
 
 
 }

@@ -1,4 +1,6 @@
 #pragma once
+#include <iostream>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -50,7 +52,7 @@ public:
 
     }
 
-    virtual void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) const;
+    virtual void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight);
 
     void setTransitionRules(std::string &match, char wright, char move);
 
@@ -90,9 +92,10 @@ public:
         wright = createInfo.wright;
         move = createInfo.move;
         toState = -1;
+        std::cout << "HALT!" << std::endl;
     }
 
-    void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) const override;
+    void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight)override;
 
     bool mouseOverText(Vector2 mouse, std::vector<State> &states) override;
 
