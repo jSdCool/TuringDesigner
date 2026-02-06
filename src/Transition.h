@@ -16,6 +16,7 @@ struct TransitionCreateInfo {
 };
 
 class Transition {
+protected:
     int fromState;
     int toState;
 
@@ -24,6 +25,8 @@ class Transition {
     char wright = 'X';
     char move = 'X';
 public:
+    virtual ~Transition() = default;
+
     Transition(const int from, const int to, const std::vector<Vector2>& mid) {
         fromState = from;
         toState = to;
@@ -47,14 +50,14 @@ public:
 
     }
 
-    void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) const;
+    virtual void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) const;
 
     void setTransitionRules(std::string &match, char wright, char move);
 
     std::string getMatchRule();
     [[nodiscard]] char getWright() const;
     [[nodiscard]] char getMove() const;
-    bool mouseOverText(Vector2 mouse, std::vector<State> &states);
+    virtual bool mouseOverText(Vector2 mouse, std::vector<State> &states);
 
     [[nodiscard]] int getStartIndex() const {
         return fromState;
@@ -75,5 +78,22 @@ public:
     void setMidPoint(Vector2 midPoint, int index) {
         midPoints[index] = midPoint;
     }
+
+};
+
+class HaltTransition : public Transition {
+public:
+    explicit HaltTransition(const TransitionCreateInfo& createInfo) : Transition(createInfo) {
+        fromState = createInfo.startIndex;
+        midPoints = createInfo.points;
+        match = createInfo.match;
+        wright = createInfo.wright;
+        move = createInfo.move;
+        toState = -1;
+    }
+
+    void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) const override;
+
+    bool mouseOverText(Vector2 mouse, std::vector<State> &states) override;
 
 };
