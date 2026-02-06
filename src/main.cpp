@@ -28,7 +28,8 @@ enum Mode {
     MOVE_TRANSITION,
     EDIT_TRANSITION,
     DELETE_STATE,
-    DELETE_TRANSITION
+    DELETE_TRANSITION,
+    SET_START_STATE
 };
 
 
@@ -51,6 +52,9 @@ char inputText[500]={0};
 Color guiBackground = { 200, 200, 225, 255 };
 int movingThingIndex =-1;
 int moveThingSubIndex = -1;
+bool eatMousePress = false;
+int startState = -1;
+
 
 Font customFont;
 
@@ -80,6 +84,8 @@ void printMode() {
         case DELETE_TRANSITION:
             cout << "DELETE_TRANSITION" << endl;
             break;
+        case SET_START_STATE:
+            cout << "SET_START_STATE" << endl;
     }
 }
 
@@ -129,7 +135,7 @@ bool app_loop() {
     }
 
     for (State &state : states) {
-        if ((currentMode == MOVE_STATE && movingThingIndex == -1) || currentMode == DELETE_STATE) {
+        if ((currentMode == MOVE_STATE && movingThingIndex == -1) || currentMode == DELETE_STATE || currentMode == SET_START_STATE) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
@@ -142,6 +148,15 @@ bool app_loop() {
         } else {
             state.draw(scale,offset,false);
         }
+    }
+
+    if (startState != -1) {
+        Vector2 ssp = states[startState].getPosition();
+        ssp.x-=30;
+        ssp = Vector2Add(ssp,offset);
+        ssp = Vector2Scale(ssp,scale);
+        DrawTriangle(ssp,{ssp.x-10*scale,ssp.y-10*scale},{ssp.x-10*scale,ssp.y+10*scale},RED);
+        DrawRectangleRec({ssp.x-50*scale,ssp.y-3*scale,40*scale,6*scale},RED);
     }
 
     //mode switching UI
@@ -217,6 +232,15 @@ bool app_loop() {
     }
     drawTransitionIcon(345,30);
     GuiDrawIcon(143,330,13,2,{80,80,80,255});
+    if (currentMode == SET_START_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (GuiButton({370,10,40,40},"")) {
+        //Delete transition
+        buttonClicked = true;
+        currentMode = SET_START_STATE;
+    }
+    DrawTriangle({400,30},{390,20},{390,40},RED);
+    DrawRectangleRec({375,27,16,6},RED);
+
     //end of mode switch ui
 
     if (buttonClicked) {
@@ -225,6 +249,10 @@ bool app_loop() {
         return true;
     }
 
+    if (eatMousePress) {
+        eatMousePress = false;
+        return true;
+    }
     //mode specific opperation ui
     if (currentMode == NEW_TRANSITION) {
         if (addTransitionPart > 0) {
@@ -428,8 +456,10 @@ bool app_loop() {
                 currentMode = DELETE_TRANSITION;
                 break;
             case DELETE_TRANSITION:
-                currentMode = PAN;
+                currentMode = SET_START_STATE;
                 break;
+            case SET_START_STATE:
+                currentMode = PAN;
         }
         printMode();
         movingThingIndex = -1;
@@ -437,7 +467,7 @@ bool app_loop() {
     } else if ((IsMouseButtonPressed(MOUSE_BUTTON_SIDE) || IsKeyPressed(KEY_LEFT_BRACKET)) && addTransitionPart == 0) {
         switch (currentMode) {
             case PAN:
-                currentMode = DELETE_TRANSITION;
+                currentMode = SET_START_STATE;
                 break;
             case NEW_STATE:
                 currentMode = PAN;
@@ -460,6 +490,8 @@ bool app_loop() {
             case DELETE_TRANSITION:
                 currentMode = DELETE_STATE;
                 break;
+            case SET_START_STATE:
+                currentMode = DELETE_TRANSITION;
         }
         printMode();
         movingThingIndex = -1;
@@ -468,7 +500,7 @@ bool app_loop() {
 
     //dont process further if the mouse is in the button area
     Vector2 areaMouse = GetMousePosition();
-    if (areaMouse.x >= 10 && areaMouse.x <=365 && areaMouse.y >= 10 && areaMouse.y <=50) {
+    if (areaMouse.x >= 10 && areaMouse.x <=410 && areaMouse.y >= 10 && areaMouse.y <=50) {
         return true;
     }
 
@@ -519,6 +551,7 @@ bool app_loop() {
                 }
                 if (!skip && newTransitionInfo.points.size() <2) {
                     newTransitionInfo.points.push_back(mouse);
+                    eatMousePress = true;
                 }
             }
         }
@@ -580,6 +613,7 @@ bool app_loop() {
                     newTransitionInfo.move = transitions[i].getMove();
                     addTransitionPart = 3;
                     TextCopy(inputText,newTransitionInfo.match.c_str());
+                    eatMousePress = true;
                     break;
                 }
             }
@@ -609,6 +643,11 @@ bool app_loop() {
                             }
                         }
                         states.erase(states.begin()+static_cast<long long>(i));
+                        if (startState == i) {
+                            startState = -1;
+                        } else if (startState >= i) {
+                            startState --;
+                        }
                         i--;
                         found = true;
                     }
@@ -624,6 +663,18 @@ bool app_loop() {
                 if (transitions[i].mouseOverText(mouse,states)) {
                     transitions.erase(transitions.begin()+static_cast<long long>(i));
                     i--;
+                }
+            }
+        }
+    } else if (currentMode == SET_START_STATE) {
+        Vector2 mouse = GetMousePosition();
+        mouse = Vector2Scale(mouse,1/scale);
+        mouse = Vector2Subtract(mouse,offset);
+        if (movingThingIndex == -1 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            for (size_t i = 0; i < states.size(); i++) {
+                if (states[i].mouseOver(mouse.x,mouse.y)) {
+                    startState = static_cast<int>(i);
+                    break;
                 }
             }
         }
