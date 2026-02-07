@@ -131,6 +131,31 @@ bool Transition::mouseOverText(Vector2 mouse,std::vector<State> &states) {
     return mouse.x >= box.x && mouse.x <= box.x + box.width && mouse.y >= box.y && mouse.y <= box.y + box.height;
 }
 
+Vector2 Transition::getTextPoint(std::vector<State> &states) {
+    Vector2 startC = states[fromState].getPosition();
+    Vector2 endC = states[toState].getPosition();
+
+    Vector2 end;
+    double startAngle = atan2(startC.y - midPoints[0].y, startC.x - midPoints[0].x);
+    double endAngle;
+    Vector2 rotIn = getRotationCoord(startAngle, 30);
+    Vector2 start = {startC.x + rotIn.x, startC.y+rotIn.y};
+    Vector2 moidPoint;
+    if (midPoints.size() == 1) {
+        endAngle = atan2(midPoints[0].y - endC.y , midPoints[0].x - endC.x);
+
+        Vector2 rotOut = getRotationCoord(endAngle, 30);
+        end = {endC.x + rotOut.x, endC.y+rotOut.y};
+        moidPoint = quadritcLerp(start,midPoints[0],end,0.5f);
+    } else {
+        endAngle = atan2(midPoints[1].y - endC.y , midPoints[1].x - endC.x);
+        Vector2 rotOut = getRotationCoord(endAngle, 30);
+        end = {endC.x + rotOut.x, endC.y+rotOut.y};
+        moidPoint = cubicLerp(start,midPoints[0],midPoints[1],end,0.5f);
+    }
+    return moidPoint;
+}
+
 void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offset, bool highlight) {
     Color color = highlight ? YELLOW : BLACK;
 
@@ -191,4 +216,17 @@ bool HaltTransition::mouseOverText(Vector2 mouse, std::vector<State> &states) {
     const Rectangle box = {midPoint.x-static_cast<float>(textLength)/2,midPoint.y - 25,static_cast<float>(textLength),30};
 
     return mouse.x >= box.x && mouse.x <= box.x + box.width && mouse.y >= box.y && mouse.y <= box.y + box.height;
+}
+
+Vector2 HaltTransition::getTextPoint(std::vector<State> &states) {
+    Vector2 startC = states[fromState].getPosition();
+
+    double startAngle = atan2(startC.y - midPoints[0].y, startC.x - midPoints[0].x);
+    Vector2 rotIn = getRotationCoord(startAngle, 30);
+    Vector2 start = {startC.x + rotIn.x, startC.y+rotIn.y};
+
+    Vector2 midPoint = Vector2Add(start,midPoints[0]);
+    midPoint = Vector2Scale(midPoint,0.5);
+
+    return midPoint;
 }

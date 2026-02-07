@@ -16,4 +16,6 @@ void deinit_app();
 
 Font getModifiedFont();
 
+void exportToRenderedImage(const std::string &fileName);
+
 #endif

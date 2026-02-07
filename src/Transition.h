@@ -81,6 +81,8 @@ public:
         midPoints[index] = midPoint;
     }
 
+    virtual Vector2 getTextPoint(std::vector<State> &states);
+
 };
 
 class HaltTransition : public Transition {
@@ -98,5 +100,7 @@ public:
     void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight)override;
 
     bool mouseOverText(Vector2 mouse, std::vector<State> &states) override;
+
+    Vector2 getTextPoint(std::vector<State> &states) override;
 
 };

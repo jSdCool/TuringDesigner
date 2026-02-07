@@ -13,6 +13,7 @@
 #include "State.h"
 #include "Transition.h"
 #include "Font.h"
+#include "tinyfiledialogs.h"
 
 using namespace std;
 
@@ -53,6 +54,8 @@ int movingThingIndex =-1;
 int moveThingSubIndex = -1;
 bool eatMousePress = false;
 int startState = -1;
+
+bool saveImage = false;
 
 
 Font customFont;
@@ -476,7 +479,6 @@ bool app_loop() {
         float oldScale = scale;
         scale += mouseChange * 0.1f;
         scale = max(scale,0.1f);
-        float scaleDif = scale / oldScale ;
         Vector2 mouse = GetMousePosition();
         offset.x = offset.x + mouse.x * (1/scale - 1/oldScale);
         offset.y = offset.y + mouse.y * (1/scale - 1/oldScale);
@@ -747,23 +749,105 @@ bool app_loop() {
 
     //handle movement keys
     if (addTransitionPart < 3) {
-        constexpr float keyPanSpeed = 0.4f;
+        constexpr float keyPanSpeed = 6.0f;
         if (IsKeyDown(KEY_LEFT)) {
-            offset.x += keyPanSpeed * 1/scale;
+            offset.x += keyPanSpeed * 1/scale * relDt;
         }
         if (IsKeyDown(KEY_RIGHT)) {
-            offset.x -= keyPanSpeed * 1/scale;
+            offset.x -= keyPanSpeed * 1/scale * relDt;
         }
         if (IsKeyDown(KEY_UP)) {
-            offset.y += keyPanSpeed * 1/scale;
+            offset.y += keyPanSpeed * 1/scale * relDt;
         }
         if (IsKeyDown(KEY_DOWN)) {
-            offset.y -= keyPanSpeed * 1/scale;
+            offset.y -= keyPanSpeed * 1/scale * relDt;
         }
+    }
+
+    if (saveImage) {
+        string png = "*.png";
+        const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
+        fileTypes[0] = png.c_str();
+        const char * selectedFile_c = tinyfd_saveFileDialog("Save Image","",1,fileTypes,nullptr);
+        if (selectedFile_c != nullptr) {
+            string selectedFile = selectedFile_c;
+            if (!selectedFile.empty()) {
+                if (!selectedFile.ends_with(".png")) {
+                    selectedFile.append(".png");
+                }
+                cout << selectedFile << endl;
+                exportToRenderedImage(selectedFile);
+            }
+
+        }
+        free(fileTypes);
+        saveImage = false;
     }
 
 
     return !windowShouldClose;
+}
+
+void exportToRenderedImage(const std::string &fileName) {
+    //step 1 find the bounding rectangle of all the drawable elements (add like 20 - 50 on each side for some padding)
+    Vector2 minPoint = {static_cast<float>(0xFFFFFFF),static_cast<float>(0xFFFFFFF)};
+    Vector2 maxPoint = {};
+
+    for (State state: states) {
+        Vector2 pos = state.getPosition();
+        maxPoint = Vector2Max(maxPoint,pos);
+        minPoint = Vector2Min(minPoint,pos);
+    }
+
+    for (unique_ptr<Transition> &transition: transitions) {
+        Vector2 pos = transition->getTextPoint(states);
+        maxPoint = Vector2Max(maxPoint,pos);
+        minPoint = Vector2Min(minPoint,pos);
+    }
+
+    //step 2 create a camera offset to place the stuf in the correct place, this is just the min point with the padding
+    Vector2 camOffset = Vector2Add(minPoint,{-70,-70});
+    camOffset = Vector2Scale(camOffset,-1);
+
+    Vector2 imageSize = Vector2Subtract(maxPoint,minPoint);
+    imageSize = Vector2Add(imageSize,{140,140});
+
+    //step 3 render all the things to the texture
+    RenderTexture2D render_texture = LoadRenderTexture(static_cast<int>(imageSize.x),static_cast<int>(imageSize.y));
+    BeginTextureMode(render_texture);
+
+    ClearBackground(WHITE);
+    for (unique_ptr<Transition> &t : transitions) {
+        t->draw(1,states,camOffset,false);
+    }
+
+    for (State &state : states) {
+        state.draw(1,camOffset,false);
+    }
+
+    if (startState != -1) {
+        Vector2 ssp = states[startState].getPosition();
+        ssp.x-=30;
+        ssp = Vector2Add(ssp,camOffset);
+        DrawTriangle(ssp,{ssp.x-10,ssp.y-10},{ssp.x-10,ssp.y+10},RED);
+        DrawRectangleRec({ssp.x-50,ssp.y-3,40,6},RED);
+    }
+
+    EndTextureMode();
+
+
+    //step 4 save the texture to an image
+    Image imageToSave = LoadImageFromTexture(render_texture.texture);
+    //step 4.5 flip the image so it is not upside down
+    ImageFlipVertical(&imageToSave);
+
+    bool success = ExportImage(imageToSave,fileName.c_str());
+    if (!success) {
+        cerr << "Failed to save image." << endl;
+    }
+
+    UnloadImage(imageToSave);
+    UnloadRenderTexture(render_texture);
 }
 
 void deinit_app() {
