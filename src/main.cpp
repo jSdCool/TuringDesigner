@@ -56,6 +56,7 @@ bool eatMousePress = false;
 int startState = -1;
 
 bool saveImage = false;
+bool dropDownOpen = false;
 
 
 Font customFont;
@@ -469,6 +470,36 @@ bool app_loop() {
             }
         }
     }
+    int a =-1;
+    //the options are specified in test sperated by a semi colon, edit mode is if it is open, I think a is the clicked option
+    if (GuiDropdownBox({1070,10,200,30},"New Machine;Export Image;Load;Save",&a,dropDownOpen)) {
+        if (dropDownOpen) {
+            /* 0 = new
+             * 1 = export
+             * 2 = load
+             * 3 = save
+             */
+            if (a==0) {
+                if (tinyfd_messageBox("Are You Sure","Delete current machine and make a new one?","yesno","question",0)) {
+                    startState = -1;
+                    transitions.erase(transitions.begin(),transitions.end());
+                    states.erase(states.begin(),states.end());
+                    movingThingIndex =-1;
+                    moveThingSubIndex = -1;
+                    addTransitionPart = 0;
+                    offset = {0,0};
+                    scale = 1.0f;
+                }
+            } else if (a==1) {
+                saveImage = true;
+            } else if (a==2) {
+
+            } else if (a==3) {
+
+            }
+        }
+        dropDownOpen = !dropDownOpen;
+    }
 
     EndDrawing();
 
@@ -564,6 +595,12 @@ bool app_loop() {
     //dont process further if the mouse is in the button area
     Vector2 areaMouse = GetMousePosition();
     if (areaMouse.x >= 10 && areaMouse.x <=455 && areaMouse.y >= 10 && areaMouse.y <=50) {
+        return true;
+    }
+    //dont process futher over the drop down box
+    //{1070,10,200,30}
+    float maxDropPx = 40.0f + 4.0f * 30.0f * static_cast<float>(dropDownOpen);
+    if (areaMouse.x >= 1070 && areaMouse.x <= 1270 && areaMouse.y >= 10 && areaMouse.y <= maxDropPx) {
         return true;
     }
 
@@ -712,8 +749,9 @@ bool app_loop() {
                         states.erase(states.begin()+static_cast<long long>(i));
                         if (startState == i) {
                             startState = -1;
-                        } else if (startState >= i) {
+                        } else if (startState >= static_cast<int>(i)) {
                             startState --;
+
                         }
                         i--;
                         found = true;
