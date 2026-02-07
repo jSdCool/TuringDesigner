@@ -109,6 +109,8 @@ void init_app() {
     GuiSetIconScale(2);
     GuiSetStyle(DEFAULT,TEXT_SIZE,25);
     GuiSetFont(customFont);
+
+    SetTargetFPS(120);
 }
 
 bool app_loop() {
