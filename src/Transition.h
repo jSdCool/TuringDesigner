@@ -101,6 +101,8 @@ public:
 
     virtual nlohmann::json asJson();
 
+    virtual bool isHalt(){return false;}
+
 };
 
 class HaltTransition : public Transition {
@@ -137,5 +139,9 @@ public:
     Vector2 getTextPoint(std::vector<State> &states) override;
 
     nlohmann::json asJson() override;
+
+    bool isHalt() override {
+        return true;
+    }
 
 };

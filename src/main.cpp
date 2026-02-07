@@ -864,10 +864,14 @@ void exportToRenderedImage(const std::string &fileName) {
         minPoint = Vector2Min(minPoint,pos);
     }
 
-    for (unique_ptr<Transition> &transition: transitions) {
+    for (const unique_ptr<Transition> &transition: transitions) {
         Vector2 pos = transition->getTextPoint(states);
+        if (transition->isHalt()) {
+            pos = transition->getMidPoints()[0];
+        }
         maxPoint = Vector2Max(maxPoint,pos);
         minPoint = Vector2Min(minPoint,pos);
+
     }
 
     //step 2 create a camera offset to place the stuf in the correct place, this is just the min point with the padding
@@ -915,7 +919,7 @@ void exportToRenderedImage(const std::string &fileName) {
     UnloadRenderTexture(render_texture);
 }
 
-void loadMachine(string fileName) {
+void loadMachine(const string &fileName) {
     //step 1 load the json file
     json file = parseJsonNe(fileName);
 
@@ -949,7 +953,7 @@ void loadMachine(string fileName) {
     startState = file["startState"];
 }
 
-void saveMachine(std::string fileName) {
+void saveMachine(const std::string& fileName) {
     json save{};
     save["states"] = {};
     for (State& state : states) {
