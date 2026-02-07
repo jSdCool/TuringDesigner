@@ -156,6 +156,24 @@ Vector2 Transition::getTextPoint(std::vector<State> &states) {
     return moidPoint;
 }
 
+nlohmann::json Transition::asJson() {
+    nlohmann::json data{};
+    data["type"] = "transition";
+    data["start"] = fromState;
+    data["end"] = toState;
+    data["match"] = match;
+    data["wright"] = std::to_string(wright);
+    data["move"] = std::to_string(move);
+    data["points"] = {};
+    for (Vector2 p:midPoints) {
+        nlohmann::json jp{};
+        jp["x"] = p.x;
+        jp["y"] = p.y;
+        data["points"].push_back(jp);
+    }
+    return data;
+}
+
 void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offset, bool highlight) {
     Color color = highlight ? YELLOW : BLACK;
 
@@ -229,4 +247,21 @@ Vector2 HaltTransition::getTextPoint(std::vector<State> &states) {
     midPoint = Vector2Scale(midPoint,0.5);
 
     return midPoint;
+}
+
+nlohmann::json HaltTransition::asJson() {
+    nlohmann::json data{};
+    data["type"] = "halt";
+    data["start"] = fromState;
+    data["match"] = match;
+    data["wright"] = std::to_string(wright);
+    data["move"] = std::to_string(move);
+    data["points"] = {};
+    for (Vector2 p:midPoints) {
+        nlohmann::json jp{};
+        jp["x"] = p.x;
+        jp["y"] = p.y;
+        data["points"].push_back(jp);
+    }
+    return data;
 }

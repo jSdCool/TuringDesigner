@@ -497,18 +497,32 @@ bool app_loop() {
             } else if (a==1) {
                 saveImage = true;
             } else if (a==2) {
-                string png = "*.json";
+                string jsonFt = "*.json";
                 const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
-                fileTypes[0] = png.c_str();
+                fileTypes[0] = jsonFt.c_str();
                 const char * fileToLoad = tinyfd_openFileDialog("Load Machine", "",1,fileTypes,"JSON file",false);
                 if (fileToLoad != nullptr) {
-                    string fileNmae = fileToLoad;
-                    loadMachine(fileNmae);
+                    string fileName = fileToLoad;
+                    if (!fileName.ends_with(".json")) {
+                        fileName = fileName.append(".json");
+                    }
+                    loadMachine(fileName);
                 }
 
                 free(fileTypes);
             } else if (a==3) {
-
+                string jsonFt = "*.json";
+                const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
+                fileTypes[0] = jsonFt.c_str();
+                const char * fileToLoad = tinyfd_saveFileDialog("Save Machine", "",1,fileTypes,"JSON file");
+                if (fileToLoad != nullptr) {
+                    string fileName = fileToLoad;
+                    if (!fileName.ends_with(".json")) {
+                        fileName = fileName.append(".json");
+                    }
+                    saveMachine(fileName);
+                }
+                free(fileTypes);
             }
         }
         dropDownOpen = !dropDownOpen;
@@ -933,6 +947,22 @@ void loadMachine(string fileName) {
     }
     //step 5 read the start state
     startState = file["startState"];
+}
+
+void saveMachine(std::string fileName) {
+    json save{};
+    save["states"] = {};
+    for (State& state : states) {
+        save["states"].push_back(state.asJson());
+    }
+    save["transitions"] = {};
+    for (unique_ptr<Transition> &transition : transitions) {
+        save["transitions"].push_back(transition->asJson());
+    }
+    save["startState"] = startState;
+    ofstream outFile(fileName);
+    outFile << save;
+    outFile.close();
 }
 
 void deinit_app() {

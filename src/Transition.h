@@ -99,6 +99,8 @@ public:
 
     virtual Vector2 getTextPoint(std::vector<State> &states);
 
+    virtual nlohmann::json asJson();
+
 };
 
 class HaltTransition : public Transition {
@@ -133,5 +135,7 @@ public:
     bool mouseOverText(Vector2 mouse, std::vector<State> &states) override;
 
     Vector2 getTextPoint(std::vector<State> &states) override;
+
+    nlohmann::json asJson() override;
 
 };

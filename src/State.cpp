@@ -44,3 +44,10 @@ void State::updatePosition(int x, int y) {
 Vector2 State::getPosition() const {
     return {this->x,this->y};
 }
+
+nlohmann::json State::asJson() {
+    nlohmann::json data{};
+    data["x"] = x;
+    data["y"] = y;
+    return data;
+}

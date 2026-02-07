@@ -20,4 +20,6 @@ void exportToRenderedImage(const std::string &fileName);
 
 void loadMachine(std::string fileName);
 
+void saveMachine(std::string fileName);
+
 #endif

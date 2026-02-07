@@ -19,6 +19,8 @@ public:
     void decreaseId() {
         id --;
     }
+
+    nlohmann::json asJson();
 };
 
 
