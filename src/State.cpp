@@ -12,6 +12,12 @@ State::State(int x, int y, int id) {
     this->id=id;
 }
 
+State::State(nlohmann::json fileData, int id) {
+    x = fileData["x"];
+    y = fileData["y"];
+    this->id = id;
+}
+
 void State::draw(float scale, Vector2 offset,bool highlight) const {
     Color outlineColor = highlight ? YELLOW : BLACK;
     Vector2 center = {(x+offset.x)*scale,(y+offset.y)*scale};

@@ -18,4 +18,6 @@ Font getModifiedFont();
 
 void exportToRenderedImage(const std::string &fileName);
 
+void loadMachine(std::string fileName);
+
 #endif

@@ -49,7 +49,23 @@ public:
         match = createInfo.match;
         wright = createInfo.wright;
         move = createInfo.move;
+    }
 
+    explicit Transition(nlohmann::json fileData) {
+        if (fileData["type"] == "transition") {
+            fromState = fileData["start"];
+            toState = fileData["end"];
+            match = fileData["match"];
+            const std::string wrightStr = fileData["wright"];
+            wright = wrightStr[0];
+            const std::string moveStr = fileData["move"];
+            move = moveStr[0];
+            for (auto pointj:fileData["points"]) {
+                float px = pointj["x"];
+                float py = pointj["y"];
+                midPoints.emplace_back(px,py);
+            }
+        }
     }
 
     virtual void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight);
@@ -95,6 +111,21 @@ public:
         move = createInfo.move;
         toState = -1;
         std::cout << "HALT!" << std::endl;
+    }
+
+    explicit HaltTransition(nlohmann::json fileData) : Transition(fileData) {
+        fromState = fileData["start"];
+        toState = -1;
+        match = fileData["match"];
+        const std::string wrightStr = fileData["wright"];
+        wright = wrightStr[0];
+        const std::string moveStr = fileData["move"];
+        move = moveStr[0];
+        for (auto pointj:fileData["points"]) {
+            float px = pointj["x"];
+            float py = pointj["y"];
+            midPoints.emplace_back(px,py);
+        }
     }
 
     void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight)override;

@@ -151,3 +151,12 @@ void DrawText(Font font,const char *text, int posX, int posY, int fontSize, Colo
         DrawTextEx(font, text, position, (float)fontSize, (float)spacing, color);
     }
 }
+
+//must be in the cpp file for some reason
+nlohmann::json parseJsonNe(std::string fileName) {
+    std::ifstream fileIn(fileName);
+    //my IDE shows me errors for this line, but it is fine so i put it here to ignore it
+    nlohmann::json file = nlohmann::json::parse(fileIn);
+    fileIn.close();
+    return file;
+}

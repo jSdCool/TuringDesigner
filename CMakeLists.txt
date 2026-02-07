@@ -34,7 +34,8 @@ add_executable(${CMAKE_PROJECT_NAME} ${APP_SOURCES}
         src/Transition.h
         src/Font.cpp
         src/Font.h
-        src/tinyfiledialogs.c)
+        src/tinyfiledialogs.c
+        src/json.hpp)
 
 add_dependencies(${CMAKE_PROJECT_NAME} copy_assets)
 

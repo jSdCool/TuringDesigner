@@ -1,6 +1,7 @@
 #include "../libs/raylib/src/raylib.h"
 #include "helper.hpp"
 #define RAYGUI_IMPLEMENTATION
+#define NLOHMANN_JSON_DISABLE_CONSTEXPR
 #include "../libs/raygui/src/raygui.h"
 
 #include "main.hpp"
@@ -8,14 +9,17 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <fstream>
 
 #include "raymath.h"
 #include "State.h"
 #include "Transition.h"
 #include "Font.h"
 #include "tinyfiledialogs.h"
+#include "json.hpp"
 
 using namespace std;
+using json = nlohmann::json;
 
 // Window setup
 bool windowShouldClose = false;
@@ -493,7 +497,16 @@ bool app_loop() {
             } else if (a==1) {
                 saveImage = true;
             } else if (a==2) {
+                string png = "*.json";
+                const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
+                fileTypes[0] = png.c_str();
+                const char * fileToLoad = tinyfd_openFileDialog("Load Machine", "",1,fileTypes,"JSON file",false);
+                if (fileToLoad != nullptr) {
+                    string fileNmae = fileToLoad;
+                    loadMachine(fileNmae);
+                }
 
+                free(fileTypes);
             } else if (a==3) {
 
             }
@@ -886,6 +899,40 @@ void exportToRenderedImage(const std::string &fileName) {
 
     UnloadImage(imageToSave);
     UnloadRenderTexture(render_texture);
+}
+
+void loadMachine(string fileName) {
+    //step 1 load the json file
+    json file = parseJsonNe(fileName);
+
+    //step 2 clear the current machine
+    startState = -1;
+    transitions.erase(transitions.begin(),transitions.end());
+    states.erase(states.begin(),states.end());
+    movingThingIndex =-1;
+    moveThingSubIndex = -1;
+    addTransitionPart = 0;
+    offset = {0,0};
+    scale = 1.0f;
+
+    //step 3 load the states
+    json jsonStates = file["states"];
+    for (auto state : jsonStates) {
+        states.push_back(State(state,states.size()+1));
+    }
+
+    //step 4 load the transitions
+    json jsonTransitions = file["transitions"];
+    for (auto transition : jsonTransitions) {
+        string type = transition["type"];
+        if (type == "halt") {
+            transitions.emplace_back(make_unique<HaltTransition>(transition));
+        } else {
+            transitions.emplace_back(make_unique<Transition>(transition));
+        }
+    }
+    //step 5 read the start state
+    startState = file["startState"];
 }
 
 void deinit_app() {
