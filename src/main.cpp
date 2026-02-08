@@ -937,8 +937,8 @@ void loadMachine(const string &fileName) {
 
     //step 3 load the states
     json jsonStates = file["states"];
-    for (auto state : jsonStates) {
-        states.push_back(State(state,states.size()+1));
+    for (const auto& state : jsonStates) {
+        states.emplace_back(state,static_cast<int>(states.size())+1);
     }
 
     //step 4 load the transitions
