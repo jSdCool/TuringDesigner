@@ -354,7 +354,7 @@ bool app_loop() {
                 }
             } else if (addTransitionPart == 4) {
                 DrawRectangle(100,100,1080,520,guiBackground);
-                string infotext = "Enter char to wright";
+                string infotext = "Enter char to write";
                 DrawTextCentered(infotext,640,200,50,BLACK);
                 GuiTextBox({615,300,50,50},inputText,2,true);
                 if ((IsKeyPressed(KEY_ENTER) && !IsKeyPressedRepeat(KEY_ENTER)) || GuiButton({780,500,100,50},"Next")) {
@@ -443,7 +443,7 @@ bool app_loop() {
             }
         } else if (addTransitionPart == 4) {
             DrawRectangle(100,100,1080,520,guiBackground);
-            string infotext = "Enter char to wright";
+            string infotext = "Enter char to write";
             DrawTextCentered(infotext,640,200,50,BLACK);
             GuiTextBox({615,300,50,50},inputText,2,true);
             if ((IsKeyPressed(KEY_ENTER) && !IsKeyPressedRepeat(KEY_ENTER)) || GuiButton({780,500,100,50},"Next")) {
