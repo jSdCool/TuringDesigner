@@ -162,8 +162,12 @@ nlohmann::json Transition::asJson() {
     data["start"] = fromState;
     data["end"] = toState;
     data["match"] = match;
-    data["wright"] = std::to_string(wright);
-    data["move"] = std::to_string(move);
+    std::string wrightStr = "X";
+    wrightStr[0] = wright;
+    data["wright"] = wrightStr;
+    std::string moveStr = "X";
+    moveStr[0] = move;
+    data["move"] = moveStr;
     data["points"] = {};
     for (Vector2 p:midPoints) {
         nlohmann::json jp{};
@@ -254,8 +258,12 @@ nlohmann::json HaltTransition::asJson() {
     data["type"] = "halt";
     data["start"] = fromState;
     data["match"] = match;
-    data["wright"] = std::to_string(wright);
-    data["move"] = std::to_string(move);
+    std::string wrightStr = "X";
+    wrightStr[0] = wright;
+    data["wright"] = wrightStr;
+    std::string moveStr = "X";
+    moveStr[0] = move;
+    data["move"] = moveStr;
     data["points"] = {};
     for (Vector2 p:midPoints) {
         nlohmann::json jp{};
