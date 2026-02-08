@@ -476,7 +476,7 @@ bool app_loop() {
     }
     int a =-1;
     //the options are specified in test sperated by a semi colon, edit mode is if it is open, I think a is the clicked option
-    if (GuiDropdownBox({1070,10,200,30},"New Machine;Export Image;Load;Save",&a,dropDownOpen)) {
+    if (GuiDropdownBox({1070,10,200,30},"New Machine;#12#Export Image;#6#Load;#2#Save",&a,dropDownOpen)) {
         if (dropDownOpen) {
             /* 0 = new
              * 1 = export
