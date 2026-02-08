@@ -497,10 +497,12 @@ bool app_loop() {
             } else if (a==1) {
                 saveImage = true;
             } else if (a==2) {
+                string thinkingDifferent = "*.thinkDifferent";//so apparently on macos if you just put json as the accepted type it can not figure out what a json file is, but if you put any other file type first, then it works. Thanks for requiring us to think different apple
                 string jsonFt = "*.json";
-                const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
-                fileTypes[0] = jsonFt.c_str();
-                const char * fileToLoad = tinyfd_openFileDialog("Load Machine", "",1,fileTypes,"JSON file",false);
+                const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)*2));
+                fileTypes[0] = thinkingDifferent.c_str();
+                fileTypes[1] = jsonFt.c_str();
+                const char * fileToLoad = tinyfd_openFileDialog("Load Machine", "",2,fileTypes,"JSON file",false);
                 if (fileToLoad != nullptr) {
                     string fileName = fileToLoad;
                     if (!fileName.ends_with(".json")) {
