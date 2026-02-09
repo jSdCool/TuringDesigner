@@ -633,8 +633,16 @@ bool app_loop() {
         return true;
     }
 
+    if (currentMode != PAN) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){
+            Vector2 delta = GetMouseDelta();
+            delta = Vector2Scale(delta, 1/scale);
+            offset = Vector2Add(offset,delta);
+        }
+    }
+
     if (currentMode == PAN) {
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)){
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)){
             Vector2 delta = GetMouseDelta();
             delta = Vector2Scale(delta, 1/scale);
             offset = Vector2Add(offset,delta);
