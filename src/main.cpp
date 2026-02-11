@@ -24,7 +24,7 @@ using json = nlohmann::json;
 // Window setup
 bool windowShouldClose = false;
 
-constexpr char BLANK_CHAR = 31;
+
 
 enum Mode {
     PAN,
@@ -476,12 +476,14 @@ bool app_loop() {
     }
     int a =-1;
     //the options are specified in test sperated by a semi colon, edit mode is if it is open, I think a is the clicked option
-    if (GuiDropdownBox({1070,10,200,30},"New Machine;#12#Export Image;#6#Load;#2#Save",&a,dropDownOpen)) {
+    if (GuiDropdownBox({1070,10,200,30},"New Machine;#12#Export Image;#6#Load;#2#Save;#131#Test",&a,dropDownOpen)) {
         if (dropDownOpen) {
             /* 0 = new
              * 1 = export
              * 2 = load
              * 3 = save
+             * 4 = test
+             * 5 = Export to assembly
              */
             if (a==0) {
                 if (tinyfd_messageBox("Are You Sure","Delete current machine and make a new one?","yesno","question",0)) {
@@ -626,7 +628,7 @@ bool app_loop() {
     if (areaMouse.x >= 10 && areaMouse.x <=455 && areaMouse.y >= 10 && areaMouse.y <=50) {
         return true;
     }
-    //dont process futher over the drop down box
+    //dont process further over the drop-down box
     //{1070,10,200,30}
     float maxDropPx = 40.0f + 4.0f * 30.0f * static_cast<float>(dropDownOpen);
     if (areaMouse.x >= 1070 && areaMouse.x <= 1270 && areaMouse.y >= 10 && areaMouse.y <= maxDropPx) {

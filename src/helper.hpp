@@ -6,6 +6,8 @@
 #include "json.hpp"
 #include "../libs/raylib/src/raylib.h"
 
+constexpr char BLANK_CHAR = 31;
+
 int getWindowWidth();
 int getWindowHeight();
 int getBrowserWindowWidth();
