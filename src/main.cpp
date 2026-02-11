@@ -17,6 +17,7 @@
 #include "Font.h"
 #include "tinyfiledialogs.h"
 #include "json.hpp"
+#include "Tape.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -36,7 +37,8 @@ enum Mode {
     DELETE_STATE,
     DELETE_TRANSITION,
     SET_START_STATE,
-    NEW_HALT_TRANSITION
+    NEW_HALT_TRANSITION,
+    SETUP_SIMULATE
 };
 
 
@@ -46,6 +48,8 @@ string assetPathPrefix = "../assets/";
 
 vector <State> states = {{200,200,1},{400,300,2}};
 vector <unique_ptr<Transition>> transitions = {};
+
+Tape tape("Hello_world!");
 
 float scale = 1;
 Vector2 offset = {0,0};
@@ -58,12 +62,19 @@ int movingThingIndex =-1;
 int moveThingSubIndex = -1;
 bool eatMousePress = false;
 int startState = -1;
+int currentState = -1;
+int lastTransition = -1;
 
 bool saveImage = false;
 bool dropDownOpen = false;
-
+bool simulating = false;
+bool halted = false;
+bool failed = false;
 
 Font customFont;
+
+void executeStep();
+bool checkTransitionMatch(string matchStr, char input);
 
 void printMode() {
     switch (currentMode) {
@@ -93,8 +104,13 @@ void printMode() {
             break;
         case SET_START_STATE:
             cout << "SET_START_STATE" << endl;
+            break;
         case NEW_HALT_TRANSITION:
             cout << "NEW_HALT_TRANSITION" << endl;
+            break;
+        case SETUP_SIMULATE:
+            cout << "SETUP_SIMULATE" << endl;
+            break;
     }
 }
 
@@ -182,6 +198,7 @@ bool app_loop() {
     }
 
     if (currentMode == NEW_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({55,10,40,40},"")) {
         //new state
         buttonClicked = true;
@@ -195,6 +212,7 @@ bool app_loop() {
     DrawText("+",64,12,40,BLACK);
 
     if (currentMode == NEW_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({100,10,40,40},"")) {
         //new transition
         buttonClicked = true;
@@ -207,6 +225,7 @@ bool app_loop() {
     DrawText("+",109,12,40,{50,50,50,255});
 
     if (currentMode == MOVE_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({145,10,40,40},"")) {
         //move state
         buttonClicked = true;
@@ -220,6 +239,7 @@ bool app_loop() {
     GuiDrawIcon(68,148,13,2,BLACK);//move icon
 
     if (currentMode == MOVE_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({190,10,40,40},"")) {
         //move transition
         buttonClicked = true;
@@ -232,6 +252,7 @@ bool app_loop() {
     GuiDrawIcon(68,193,13,2,{80,80,80,255});//move icon
 
     if (currentMode == EDIT_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({235,10,40,40},"")) {
         //Edit transition
         buttonClicked = true;
@@ -244,6 +265,7 @@ bool app_loop() {
     GuiDrawIcon(23,238,13,2,{80,80,80,255});//move icon
 
     if (currentMode == DELETE_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({280,10,40,40},"")) {
         //Delete State
         buttonClicked = true;
@@ -257,6 +279,7 @@ bool app_loop() {
     GuiDrawIcon(143,285,13,2,BLACK);
 
     if (currentMode == DELETE_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({325,10,40,40},"")) {
         //Delete transition
         buttonClicked = true;
@@ -268,6 +291,7 @@ bool app_loop() {
     drawTransitionIcon(345,30);
     GuiDrawIcon(143,330,13,2,{80,80,80,255});
     if (currentMode == SET_START_STATE) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({370,10,40,40},"")) {
         //Delete transition
         buttonClicked = true;
@@ -280,6 +304,7 @@ bool app_loop() {
     DrawRectangleRec({375,27,16,6},RED);
 
     if (currentMode == NEW_HALT_TRANSITION) GuiSetState(STATE_FOCUSED); else GuiSetState(STATE_NORMAL);
+    if (simulating) GuiSetState(STATE_DISABLED);
     if (GuiButton({415,10,40,40},"")) {
         //Delete transition
         buttonClicked = true;
@@ -293,6 +318,37 @@ bool app_loop() {
     DrawTextCentered(tmp,441,20,20,BLACK);
 
     //end of mode switch ui
+
+    GuiSetState(STATE_NORMAL);
+    //simulating UI and simulation
+    if (simulating) {
+        //controll buttons
+        GuiButton({500,15,30,30},"#131#");//play / pause button
+        GuiButton({540,15,30,30},"#134#");//step button
+        GuiButton({580,15,30,30},">>");//fast simulate
+        GuiButton({620,15,30,30},"#133#");//stop button
+
+        //render the tape
+        DrawRectangle(50,650,1180,40,LIGHTGRAY);
+        int tapeScrollOffset=0;
+        size_t head = *tape;
+        if (head < tapeScrollOffset) {
+            tapeScrollOffset = static_cast<int>(head);
+        }
+        if (head > tapeScrollOffset+39) {
+            tapeScrollOffset = static_cast<int>(head)-39;
+        }
+        for (int i=0;i<39;i++) {
+            char display[] = {BLANK_CHAR,0};
+            if (tapeScrollOffset + i < tape.size()) {
+                display[0] = tape[tapeScrollOffset+i];
+            }
+            if (head == tapeScrollOffset +i) {//if at the head
+                DrawRectangle(56+30*i,650,25,40,GRAY);
+            }
+            DrawTextEx(customFont,display,{static_cast<float>(60 + 30 * i),656.0f},30,3,BLACK);
+        }
+    }
 
     if (buttonClicked) {
         printMode();
@@ -473,6 +529,52 @@ bool app_loop() {
                 movingThingIndex = -1;
             }
         }
+    } else if (currentMode == SETUP_SIMULATE) {
+        //menu background
+        DrawRectangle(100,100,1080,520,guiBackground);
+        if (addTransitionPart == 0) {
+            string infotext = "Reuse current tape?";
+            DrawTextCentered(infotext,640,200,50,BLACK);
+            if (GuiButton({490,350,75,50},"Yes")) {
+                addTransitionPart = 0;
+                simulating = true;
+                currentMode = PAN;
+                halted = false;
+                failed = false;
+                currentState = startState;
+                lastTransition = -1;
+            }
+            if (GuiButton({715,350,75,50},"No")) {
+                addTransitionPart = 1;
+            }
+        } else if (addTransitionPart == 1) {
+            string infotext = "Setup new Tape";
+            DrawTextCentered(infotext,640,200,50,BLACK);
+
+            GuiTextBox({150,300,980,50},inputText,499,true);
+            if (GuiButton({400,500,100,50},"Blank")) {
+                int endInd = 0;
+                for (endInd = 0;endInd<499;endInd++) {
+                    if (inputText[endInd] == '\0') {
+                        break;
+                    }
+                }
+                inputText[endInd] = BLANK_CHAR;//use this for the blank char, figure our custom rendering later
+                inputText[endInd+1] = '\0';
+            } else if (IsKeyPressed(KEY_ENTER) || GuiButton({780,500,100,50},"Next")) {
+                if (inputText[0] != '\0') {
+                    string tapeContent = inputText;
+                    tape = Tape(tapeContent);//create the new tape with the head at the start
+                    addTransitionPart = 0;
+                    simulating = true;
+                    currentMode = PAN;
+                    halted = false;
+                    failed = false;
+                    currentState = startState;
+                    lastTransition = -1;
+                }
+            }
+        }
     }
     int a =-1;
     //the options are specified in test sperated by a semi colon, edit mode is if it is open, I think a is the clicked option
@@ -527,6 +629,11 @@ bool app_loop() {
                     saveMachine(fileName);
                 }
                 free(fileTypes);
+            } else if (a==4) {
+                currentMode = SETUP_SIMULATE;
+                simulating = false;
+                inputText[0] = '\0';
+                addTransitionPart =0;
             }
         }
         dropDownOpen = !dropDownOpen;
@@ -989,4 +1096,58 @@ void deinit_app() {
 
 Font getModifiedFont() {
     return customFont;
+}
+
+void executeStep() {
+    //read the char at the head
+    char head = tape.read();
+
+    //for each transition at this head
+    for (size_t i=0;i<transitions.size();i++) {
+        //check if the read char matches this transition
+        if (checkTransitionMatch(transitions[i]->getMatchRule(),head)) {
+            //if so, cary out the wright operation and update the last transition
+            char write = transitions[i]->getWright();
+            if (write != '*') {
+                tape.write(write);
+            }
+            lastTransition = static_cast<int>(i);
+            if (transitions[i]->isHalt()) {
+                //if halt transition, halt return
+                halted = true;
+                return;
+            }
+            //move the head
+            if (transitions[i]->getMove()=='R') {
+                tape.right();
+            } else {
+                tape.left();
+            }
+            //update the current state
+            currentState = transitions[i]->getEndIndex();
+            return;
+        }
+    }
+
+    //if you reach this fail
+    halted = true;
+    failed = true;
+}
+
+bool checkTransitionMatch(string matchStr, char input) {
+    if (matchStr[0] == '[') {
+        bool inverted = matchStr[1]=='^';
+        bool matched = false;
+        for (int check = inverted ? 2 : 1;check < matchStr.size()-1; check++) {
+            if (matchStr[check] == input) {
+                matched = true;
+                break;
+            }
+        }
+        return matched ^ inverted;
+    }
+    if (matchStr[0] == '*') {
+        return true;
+    }
+    return matchStr[0] == input;
 }
