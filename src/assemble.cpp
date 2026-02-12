@@ -43,6 +43,19 @@ public:
         } else {
             result += " 0";
         }
+        //comment
+        result += " ; ";
+        if (orFlag) {
+            result += "or ";
+        } else {
+            result += "compare ";
+        }
+        if (blankFlag) {
+            result+= "BLANK";
+        } else {
+            result += "v";
+            result[result.length()-1] = letter;
+        }
         return result;
     }
     //alternate constructor to automatically determine the blank-ness
@@ -69,10 +82,15 @@ public:
 
 class JumpInstruction : public AssemblyInstruction {
     const std::string label;
+    const std::string comment;
 public:
-    explicit JumpInstruction(std::string label) : AssemblyInstruction(4), label(std::move(label)) {}
+    explicit JumpInstruction(std::string label, std::string comment) : AssemblyInstruction(4), label(std::move(label)),comment(std::move(comment)) {}
     std::string getAssembly() override {
-        return "jmp !"+label;
+        std::string resultCmt;
+        if (!comment.empty()) {
+            resultCmt = " ; "+comment;
+        }
+        return "jmp !"+label+resultCmt;
     }
 };
 
@@ -126,10 +144,15 @@ public:
 
 class LabelSudoInstruction : public AssemblyInstruction {
     const std::string label;
+    const std::string comment;
 public:
-    explicit LabelSudoInstruction(std::string label) : AssemblyInstruction(-1), label(std::move(label)) {}
+    explicit LabelSudoInstruction(std::string label, std::string comment) : AssemblyInstruction(-1), label(std::move(label)), comment(std::move(comment)) {}
     std::string getAssembly() override {
-        return "!"+label;
+        std::string resultCmt;
+        if (!comment.empty()) {
+            resultCmt = " ; "+comment;
+        }
+        return "!"+label+resultCmt;
     }
 };
 
@@ -165,12 +188,12 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
         result.emplace_back(std::make_unique<AlphaInstruction>(letter,false));
     }
 
-    result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(startingInstruction+1)));
+    result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(startingInstruction+1),"go to start state"));
 
     for (int i=0; i<numberOfStates; i++) {
         //for each state:
         //add the label for this state
-        result.emplace_back(std::make_unique<LabelSudoInstruction>(std::to_string(i+1)));
+        result.emplace_back(std::make_unique<LabelSudoInstruction>(std::to_string(i+1),"state "+std::to_string(i+1)));
 
         //find all the necessary transitions
         std::vector<Transition*> stateTransitions;
@@ -192,7 +215,7 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
                     result.emplace_back(MoveInstruction::halt());
                     break;
                 }
-                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1)));
+                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1),"go to state "+std::to_string(transition->getEndIndex()+1)));
                 break;
                 //no need to process further transitions
             }
@@ -226,7 +249,7 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
         //each transition specific use
         for (Transition * transition : stateTransitions) {
             //put in the transition label
-            result.emplace_back(std::make_unique<LabelSudoInstruction>(generateTransitionLabel(transition)));
+            result.emplace_back(std::make_unique<LabelSudoInstruction>(generateTransitionLabel(transition),""));
             char write = transition->getWright();
             if (write != '*') {//if we are writing something then wright it
                 result.emplace_back(std::make_unique<PutInstruction>(write));
@@ -242,7 +265,7 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
                 //or halt if it is a halt transition
                 result.emplace_back(MoveInstruction::halt());
             } else {
-                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1)));
+                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1),"go to state "+std::to_string(transition->getEndIndex()+1)));
             }
         }
 
@@ -253,6 +276,11 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
 
 void optimizeAssembly( std::vector<std::unique_ptr<AssemblyInstruction>> &assembly_instructions) {
     //TODO maby
+    //remove the jump to start state if the start state is the first label in the file
+    //remove unconditional jumps if the next line is the lable it jumps to
+    //if the instruction right adder a label is a fail or halt, replace all non conditional jumps to that label with the fail / halt instruction
+    //if a label is used only once for a single unconditional jump, inline that label
+    //if a fail / halt immediately follows an unconditioned jump, remove it
 }
 
 void writeAssemblyToFile(const std::vector<std::unique_ptr<AssemblyInstruction>>& assembly_instructions, std::string &filename) {
