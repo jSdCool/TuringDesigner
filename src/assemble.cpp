@@ -32,10 +32,10 @@ public:
         std::string result = "compare '~'";
 
         if (blankFlag) {
-            result[10] = '0';
+            result[9] = '0';
             result += " 1";
         } else {
-            result[10] = letter;
+            result[9] = letter;
             result += " 0";
         }
         if (orFlag) {
@@ -96,29 +96,31 @@ public:
 
 class MoveInstruction : public AssemblyInstruction {
     const int amount;
-    bool haltSuccess;
+    const bool haltSuccess;
+    const std::string comment;
 public:
-    MoveInstruction(int amount,bool halt): AssemblyInstruction(6), amount(amount), haltSuccess(halt) {}
+    MoveInstruction(int amount,bool halt, std::string comment): AssemblyInstruction(6), amount(amount), haltSuccess(halt), comment(std::move(comment)) {}
     std::string getAssembly() override {
         std::string result = "move ";
         result += std::to_string(amount);
         if (amount == 0 && haltSuccess) {
             result += " 1";
         }
+        result += " ; "+comment;
         return result;
     }
 
     static MoveInstruction * left() {
-        return new MoveInstruction(-1,false);
+        return new MoveInstruction(-1,false,"left");
     }
     static MoveInstruction * right() {
-        return new MoveInstruction(1,false);
+        return new MoveInstruction(1,false,"right");
     }
     static MoveInstruction * fail() {
-        return new MoveInstruction(0,false);
+        return new MoveInstruction(0,false,"fail");
     }
     static MoveInstruction * halt() {
-        return new MoveInstruction(0,true);
+        return new MoveInstruction(0,true,"halt");
     }
 };
 
@@ -127,12 +129,32 @@ class LabelSudoInstruction : public AssemblyInstruction {
 public:
     explicit LabelSudoInstruction(std::string label) : AssemblyInstruction(-1), label(std::move(label)) {}
     std::string getAssembly() override {
-        return "label !"+label;
+        return "!"+label;
     }
 };
 
 std::string generateTransitionLabel(Transition * transition) {
-    return "";
+    std::string result = std::to_string(transition->getStartIndex()+1);
+    result += "_";
+    std::string match = transition->getMatchRule();
+    if (match[0] == '[') {
+        for (size_t i=1;i<match.length()-1;i++) {
+            if (match[i]!=BLANK_CHAR) {
+                result += "'";
+                result[result.length()-1] = match[i];
+            }else {
+                result += "_BLANK";
+            }
+        }
+    } else {
+        if (match[0]!=BLANK_CHAR) {
+            result += "'";
+            result[result.length()-1] = match[0];
+        } else {
+            result+="BLANK";
+        }
+    }
+    return result;
 }
 
 std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfStates,std::vector<std::unique_ptr<Transition>> &transitions, int startingInstruction, std::string &alphabet) {
@@ -143,12 +165,12 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
         result.emplace_back(std::make_unique<AlphaInstruction>(letter,false));
     }
 
-    result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(startingInstruction)));
+    result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(startingInstruction+1)));
 
     for (int i=0; i<numberOfStates; i++) {
         //for each state:
         //add the label for this state
-        result.emplace_back(std::make_unique<LabelSudoInstruction>(std::to_string(i)));
+        result.emplace_back(std::make_unique<LabelSudoInstruction>(std::to_string(i+1)));
 
         //find all the necessary transitions
         std::vector<Transition*> stateTransitions;
@@ -170,7 +192,7 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
                     result.emplace_back(MoveInstruction::halt());
                     break;
                 }
-                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex())));
+                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1)));
                 break;
                 //no need to process further transitions
             }
@@ -185,10 +207,10 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
                 }
                 if (invert) {
                     //jump when not equal
-                    result.emplace_back(std::make_unique<JumpNotEqualInstruction>(std::to_string(transition->getEndIndex())));
+                    result.emplace_back(std::make_unique<JumpNotEqualInstruction>(generateTransitionLabel(transition)));
                 }else {
                     //jump when equal
-                    result.emplace_back(std::make_unique<JumpEqualInstruction>(std::to_string(transition->getEndIndex())));
+                    result.emplace_back(std::make_unique<JumpEqualInstruction>(generateTransitionLabel(transition)));
                 }
 
             } else {
@@ -197,9 +219,9 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
                 //jump is equal instruction
                 result.emplace_back(std::make_unique<JumpEqualInstruction>(generateTransitionLabel(transition)));
             }
-            //add the fail condition to the end of the state, if this is reached it means none of the transitions were valid and therefore the machine fails
-            result.emplace_back(MoveInstruction::fail());
         }
+        //add the fail condition to the end of the state, if this is reached it means none of the transitions were valid and therefore the machine fails
+        result.emplace_back(MoveInstruction::fail());
 
         //each transition specific use
         for (Transition * transition : stateTransitions) {
@@ -220,7 +242,7 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
                 //or halt if it is a halt transition
                 result.emplace_back(MoveInstruction::halt());
             } else {
-                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex())));
+                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1)));
             }
         }
 
