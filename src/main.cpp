@@ -146,34 +146,44 @@ bool app_loop() {
     ClearBackground({255, 228, 209,255});
 
 
-    for (unique_ptr<Transition> &t : transitions) {
+    for (size_t i = 0;i<transitions.size();i++) {
+        unique_ptr<Transition> &t = transitions[i];
         if (((currentMode == EDIT_TRANSITION || currentMode == MOVE_TRANSITION)&& movingThingIndex == -1) || currentMode == DELETE_TRANSITION) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
             if (t->mouseOverText(mouse,states)) {
-                t->draw(scale,states,offset,true);
+                t->draw(scale,states,offset,YELLOW);
             } else {
-                t->draw(scale,states,offset,false);
+                t->draw(scale,states,offset,BLACK);
             }
         } else {
-            t->draw(scale,states,offset,false);
+            if (simulating && lastTransition == i) {
+                t->draw(scale,states,offset,RED);
+            } else {
+                t->draw(scale,states,offset,BLACK);
+            }
         }
     }
 
-    for (State &state : states) {
+    for (size_t i = 0;i<states.size();i++) {
+        State &state = states[i];
         if ((currentMode == MOVE_STATE && movingThingIndex == -1) || currentMode == DELETE_STATE || currentMode == SET_START_STATE || currentMode == NEW_HALT_TRANSITION) {
             Vector2 mouse = GetMousePosition();
             mouse = Vector2Scale(mouse,1/scale);
             mouse = Vector2Subtract(mouse,offset);
 
             if (state.mouseOver(mouse.x,mouse.y)) {
-                state.draw(scale,offset,true);
+                state.draw(scale,offset,YELLOW);
             } else {
-                state.draw(scale,offset,false);
+                state.draw(scale,offset,BLACK);
             }
         } else {
-            state.draw(scale,offset,false);
+            if (simulating && currentState == i) {
+                state.draw(scale,offset,RED);
+            } else {
+                state.draw(scale,offset,BLACK);
+            }
         }
     }
 
@@ -323,9 +333,14 @@ bool app_loop() {
     //simulating UI and simulation
     if (simulating) {
         //controll buttons
-        GuiButton({500,15,30,30},"#131#");//play / pause button
-        GuiButton({540,15,30,30},"#134#");//step button
-        GuiButton({580,15,30,30},">>");//fast simulate
+        if (!halted) {//only draw the first few buttons if not halted
+            GuiButton({500,15,30,30},"#131#");//play / pause button
+            if (GuiButton({540,15,30,30},"#134#")) {
+                //step button
+                executeStep();
+            }
+            GuiButton({580,15,30,30},">>");//fast simulate
+        }
         GuiButton({620,15,30,30},"#133#");//stop button
 
         //render the tape
@@ -1006,11 +1021,11 @@ void exportToRenderedImage(const std::string &fileName) {
 
     ClearBackground(WHITE);
     for (unique_ptr<Transition> &t : transitions) {
-        t->draw(1,states,camOffset,false);
+        t->draw(1,states,camOffset,BLACK);
     }
 
     for (State &state : states) {
-        state.draw(1,camOffset,false);
+        state.draw(1,camOffset,BLACK);
     }
 
     if (startState != -1) {
@@ -1105,7 +1120,7 @@ void executeStep() {
     //for each transition at this head
     for (size_t i=0;i<transitions.size();i++) {
         //check if the read char matches this transition
-        if (checkTransitionMatch(transitions[i]->getMatchRule(),head)) {
+        if (transitions[i]->getStartIndex() == currentState && checkTransitionMatch(transitions[i]->getMatchRule(),head)) {
             //if so, cary out the wright operation and update the last transition
             char write = transitions[i]->getWright();
             if (write != '*') {
@@ -1125,6 +1140,7 @@ void executeStep() {
             }
             //update the current state
             currentState = transitions[i]->getEndIndex();
+            cout << currentState << " "<<lastTransition<<endl;
             return;
         }
     }

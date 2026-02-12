@@ -12,7 +12,7 @@ public:
 
     State(nlohmann::json fileData, int id);
 
-    void draw(float scale,Vector2 offset,bool highlight) const;
+    void draw(float scale,Vector2 offset,Color color) const;
     [[nodiscard]] bool mouseOver(float x, float y) const;
     void updatePosition(int x, int y);
     [[nodiscard]] Vector2 getPosition() const;

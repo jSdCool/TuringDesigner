@@ -18,11 +18,10 @@ State::State(nlohmann::json fileData, int id) {
     this->id = id;
 }
 
-void State::draw(float scale, Vector2 offset,bool highlight) const {
-    Color outlineColor = highlight ? YELLOW : BLACK;
+void State::draw(float scale, Vector2 offset,Color color) const {
     Vector2 center = {(x+offset.x)*scale,(y+offset.y)*scale};
     DrawCircleV(center,30*scale,WHITE);
-    DrawRing(center,29*scale,31*scale,0,360,100,outlineColor);
+    DrawRing(center,29*scale,31*scale,0,360,100,color);
 
     int textSize = static_cast<int>(23 * scale);
     std::string idString = std::to_string(id);

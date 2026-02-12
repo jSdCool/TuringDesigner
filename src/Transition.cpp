@@ -37,9 +37,7 @@ char Transition::getWright() const {
     return wright;
 }
 
-void Transition::draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight) {
-    Color color = highlight ? YELLOW : BLACK;
-
+void Transition::draw(float scale, std::vector<State> &states, Vector2 offset,Color color) {
     Vector2 startC = states[fromState].getPosition();
     Vector2 endC = states[toState].getPosition();
     startC.x += offset.x;
@@ -178,9 +176,7 @@ nlohmann::json Transition::asJson() {
     return data;
 }
 
-void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offset, bool highlight) {
-    Color color = highlight ? YELLOW : BLACK;
-
+void HaltTransition::draw(float scale, std::vector<State> &states, Vector2 offset, Color color) {
     Vector2 startC = states[fromState].getPosition();
     startC.x += offset.x;
     startC.y += offset.y;

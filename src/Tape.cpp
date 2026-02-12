@@ -21,7 +21,7 @@ void Tape::left() {
 
 void Tape::right() {
     if (headPosition == buffer.size() - 1) {//if we are at the end of the tape
-        buffer.push_front(BLANK_CHAR);//add a new blank char to the end of the tape
+        buffer.push_back(BLANK_CHAR);//add a new blank char to the end of the tape
     }
     headPosition++;
 }

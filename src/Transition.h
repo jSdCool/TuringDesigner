@@ -68,7 +68,7 @@ public:
         }
     }
 
-    virtual void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight);
+    virtual void draw(float scale, std::vector<State> &states, Vector2 offset,Color color);
 
     void setTransitionRules(std::string &match, char wright, char move);
 
@@ -132,7 +132,7 @@ public:
         }
     }
 
-    void draw(float scale, std::vector<State> &states, Vector2 offset,bool highlight)override;
+    void draw(float scale, std::vector<State> &states, Vector2 offset,Color color)override;
 
     bool mouseOverText(Vector2 mouse, std::vector<State> &states) override;
 
