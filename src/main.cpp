@@ -18,6 +18,7 @@
 #include "tinyfiledialogs.h"
 #include "json.hpp"
 #include "Tape.hpp"
+#include "assemble.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -634,7 +635,7 @@ bool app_loop() {
     }
     int a =-1;
     //the options are specified in test sperated by a semi colon, edit mode is if it is open, I think a is the clicked option
-    if (GuiDropdownBox({1070,10,200,30},"New Machine;#12#Export Image;#6#Load;#2#Save;#131#Test",&a,dropDownOpen)) {
+    if (GuiDropdownBox({1070,10,200,30},"New Machine;#12#Export Image;#6#Load;#2#Save;#131#Test;Export ASM",&a,dropDownOpen)) {
         if (dropDownOpen) {
             /* 0 = new
              * 1 = export
@@ -676,9 +677,9 @@ bool app_loop() {
                 string jsonFt = "*.json";
                 const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
                 fileTypes[0] = jsonFt.c_str();
-                const char * fileToLoad = tinyfd_saveFileDialog("Save Machine", "",1,fileTypes,"JSON file");
-                if (fileToLoad != nullptr) {
-                    string fileName = fileToLoad;
+                const char * fileToSave = tinyfd_saveFileDialog("Save Machine", "",1,fileTypes,"JSON file");
+                if (fileToSave != nullptr) {
+                    string fileName = fileToSave;
                     if (!fileName.ends_with(".json")) {
                         fileName = fileName.append(".json");
                     }
@@ -690,6 +691,23 @@ bool app_loop() {
                 simulating = false;
                 inputText[0] = '\0';
                 addTransitionPart =0;
+            } else if (a==5) {
+                string jsonFt = "*.asm";
+                const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
+                fileTypes[0] = jsonFt.c_str();
+                const char * fileToSave = tinyfd_saveFileDialog("Compile Machine", "",1,fileTypes,"Assembly file");
+                if (fileToSave != nullptr) {
+                    string fileName = fileToSave;
+                    if (!fileName.ends_with(".asm")) {
+                        fileName = fileName.append(".asm");
+                    }
+                    string alpha = "abBx";//TODO
+                    auto assembly = generateAssembly(static_cast<int>(states.size()),transitions,startState,alpha);
+                    optimizeAssembly(assembly);
+                    writeAssemblyToFile(assembly,fileName);
+                    cout << "File Exported" << endl;
+                }
+                free(fileTypes);
             }
         }
         dropDownOpen = !dropDownOpen;

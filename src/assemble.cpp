@@ -1,6 +1,7 @@
 #include "assemble.hpp"
 
 #include <utility>
+#include <fstream>
 #include "helper.hpp"
 
 class AlphaInstruction : public AssemblyInstruction {
@@ -142,6 +143,8 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
         result.emplace_back(std::make_unique<AlphaInstruction>(letter,false));
     }
 
+    result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(startingInstruction)));
+
     for (int i=0; i<numberOfStates; i++) {
         //for each state:
         //add the label for this state
@@ -224,4 +227,16 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
     }
 
     return result;
+}
+
+void optimizeAssembly( std::vector<std::unique_ptr<AssemblyInstruction>> &assembly_instructions) {
+    //TODO maby
+}
+
+void writeAssemblyToFile(const std::vector<std::unique_ptr<AssemblyInstruction>>& assembly_instructions, std::string &filename) {
+    std::ofstream file(filename);
+    for (const std::unique_ptr<AssemblyInstruction> &instruction : assembly_instructions) {
+        file << instruction->getAssembly() << std::endl;
+    }
+    file.close();
 }

@@ -22,4 +22,8 @@ public:
 
 
 
-std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfStates, std::vector<std::unique_ptr<Transition>> &transitions, int startingInstruction);
+std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfStates, std::vector<std::unique_ptr<Transition>> &transitions, int startingInstruction,std::string &alphabet);
+
+void optimizeAssembly(std::vector<std::unique_ptr<AssemblyInstruction>> &assembly_instructions);
+
+void writeAssemblyToFile(const std::vector<std::unique_ptr<AssemblyInstruction>>& assembly_instructions, std::string &filename);
