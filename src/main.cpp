@@ -692,22 +692,25 @@ bool app_loop() {
                 inputText[0] = '\0';
                 addTransitionPart =0;
             } else if (a==5) {
-                string jsonFt = "*.asm";
-                const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
-                fileTypes[0] = jsonFt.c_str();
-                const char * fileToSave = tinyfd_saveFileDialog("Compile Machine", "",1,fileTypes,"Assembly file");
-                if (fileToSave != nullptr) {
-                    string fileName = fileToSave;
-                    if (!fileName.ends_with(".asm")) {
-                        fileName = fileName.append(".asm");
+                const char * alphaP = tinyfd_inputBox("Enter valid Alphabet","Enter valid Alphabet","");
+                if (alphaP != nullptr) {
+                    string alpha = alphaP;
+                    string jsonFt = "*.asm";
+                    const char ** fileTypes = static_cast<const char **>(malloc(sizeof(char *)));
+                    fileTypes[0] = jsonFt.c_str();
+                    const char * fileToSave = tinyfd_saveFileDialog("Compile Machine", "",1,fileTypes,"Assembly file");
+                    if (fileToSave != nullptr) {
+                        string fileName = fileToSave;
+                        if (!fileName.ends_with(".asm")) {
+                            fileName = fileName.append(".asm");
+                        }
+                        auto assembly = generateAssembly(static_cast<int>(states.size()),transitions,startState,alpha);
+                        optimizeAssembly(assembly);
+                        writeAssemblyToFile(assembly,fileName);
+                        cout << "File Exported" << endl;
                     }
-                    string alpha = "abBx";//TODO
-                    auto assembly = generateAssembly(static_cast<int>(states.size()),transitions,startState,alpha);
-                    optimizeAssembly(assembly);
-                    writeAssemblyToFile(assembly,fileName);
-                    cout << "File Exported" << endl;
+                    free(fileTypes);
                 }
-                free(fileTypes);
             }
         }
         dropDownOpen = !dropDownOpen;

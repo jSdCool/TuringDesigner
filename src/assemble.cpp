@@ -290,7 +290,7 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
 void optimizeAssembly( std::vector<std::unique_ptr<AssemblyInstruction>> &assembly_instructions) {
     //TODO maby
     //remove the jump to start state if the start state is the first label in the file
-    //remove unconditional jumps if the next line is the lable it jumps to
+    //remove unconditional jumps if the next line is the label it jumps to
     //if the instruction right adder a label is a fail or halt, replace all non conditional jumps to that label with the fail / halt instruction
     //if a label is used only once for a single unconditional jump, inline that label
     //if a fail / halt immediately follows an unconditioned jump, remove it
