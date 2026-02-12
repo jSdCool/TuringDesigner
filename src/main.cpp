@@ -373,6 +373,10 @@ bool app_loop() {
                 executeStep();
             }
         }
+        if (failed) {
+            string failure = "FAILED!";
+            DrawTextCentered(failure,800,20,50,RED);
+        }
 
         //render the tape
         DrawRectangle(50,650,1180,40,LIGHTGRAY);
@@ -382,7 +386,7 @@ bool app_loop() {
             tapeScrollOffset = static_cast<int>(head);
         }
         if (head > tapeScrollOffset+39) {
-            tapeScrollOffset = static_cast<int>(head)-39;
+            tapeScrollOffset = static_cast<int>(head)-40;
         }
         for (int i=0;i<39;i++) {
             char display[] = {BLANK_CHAR,0};
@@ -390,9 +394,13 @@ bool app_loop() {
                 display[0] = tape[tapeScrollOffset+i];
             }
             if (head == tapeScrollOffset +i) {//if at the head
-                DrawRectangle(56+30*i,650,25,40,GRAY);
+                DrawRectangleLines(56+30*i,650,25,40,BLACK);
             }
-            DrawTextEx(customFont,display,{static_cast<float>(60 + 30 * i),656.0f},30,3,BLACK);
+            auto color = BLACK;
+            if (display[0] == BLANK_CHAR) {
+                color = GRAY;
+            }
+            DrawTextEx(customFont,display,{static_cast<float>(60 + 30 * i),656.0f},30,3,color);
         }
     }
 
@@ -1173,7 +1181,6 @@ void executeStep() {
             }
             //update the current state
             currentState = transitions[i]->getEndIndex();
-            cout << currentState << " "<<lastTransition<<endl;
             return;
         }
     }
