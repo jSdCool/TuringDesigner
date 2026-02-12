@@ -64,6 +64,8 @@ bool eatMousePress = false;
 int startState = -1;
 int currentState = -1;
 int lastTransition = -1;
+int simulationSpeed = 0;
+int simulatedFrameCount = 0;
 
 bool saveImage = false;
 bool dropDownOpen = false;
@@ -334,14 +336,43 @@ bool app_loop() {
     if (simulating) {
         //controll buttons
         if (!halted) {//only draw the first few buttons if not halted
-            GuiButton({500,15,30,30},"#131#");//play / pause button
+            string playText = "#";
+            if (simulationSpeed != 0) {
+                playText += "132";
+            }else {
+                playText += "131";
+            }
+            playText += "#";
+            if (GuiButton({500,15,30,30},playText.c_str())) {
+                //play / pause button
+                if (simulationSpeed != 0) {
+                    simulationSpeed = 0;
+                } else {
+                    simulationSpeed = 50;
+                }
+            }
             if (GuiButton({540,15,30,30},"#134#")) {
                 //step button
                 executeStep();
             }
-            GuiButton({580,15,30,30},">>");//fast simulate
+            if (GuiButton({580,15,30,30},">>")) {
+                //fast simulate
+                simulationSpeed = 10;
+            }
         }
-        GuiButton({620,15,30,30},"#133#");//stop button
+        if (GuiButton({620,15,30,30},"#133#")) {
+            //stop button
+            simulating = false;
+            simulationSpeed = 0;
+        }
+
+        if (!halted && simulationSpeed != 0) {
+            simulatedFrameCount++;
+            if (simulatedFrameCount == simulationSpeed) {
+                simulatedFrameCount = 0;
+                executeStep();
+            }
+        }
 
         //render the tape
         DrawRectangle(50,650,1180,40,LIGHTGRAY);
@@ -558,6 +589,7 @@ bool app_loop() {
                 failed = false;
                 currentState = startState;
                 lastTransition = -1;
+                simulationSpeed = 0;
             }
             if (GuiButton({715,350,75,50},"No")) {
                 addTransitionPart = 1;
@@ -587,6 +619,7 @@ bool app_loop() {
                     failed = false;
                     currentState = startState;
                     lastTransition = -1;
+                    simulationSpeed = 0;
                 }
             }
         }
@@ -1127,16 +1160,16 @@ void executeStep() {
                 tape.write(write);
             }
             lastTransition = static_cast<int>(i);
-            if (transitions[i]->isHalt()) {
-                //if halt transition, halt return
-                halted = true;
-                return;
-            }
             //move the head
             if (transitions[i]->getMove()=='R') {
                 tape.right();
             } else {
                 tape.left();
+            }
+            if (transitions[i]->isHalt()) {
+                //if halt transition, halt return
+                halted = true;
+                return;
             }
             //update the current state
             currentState = transitions[i]->getEndIndex();
