@@ -211,6 +211,17 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
             std::string condition = transition->getMatchRule();
             //if we find a raw wild card transition
             if (condition[0] == '*') {
+                //just wright in the entire transition here
+                char write = transition->getWright();
+                if (write != '*') {//if we are writing something then wright it
+                    result.emplace_back(std::make_unique<PutInstruction>(write));
+                }
+                //move the head
+                if (transition->getMove() == 'L') {
+                    result.emplace_back(MoveInstruction::left());
+                } else {
+                    result.emplace_back(MoveInstruction::right());
+                }
                 if (transition->isHalt()) {
                     result.emplace_back(MoveInstruction::halt());
                     break;
@@ -248,24 +259,26 @@ std::vector<std::unique_ptr<AssemblyInstruction>> generateAssembly(int numberOfS
 
         //each transition specific use
         for (Transition * transition : stateTransitions) {
-            //put in the transition label
-            result.emplace_back(std::make_unique<LabelSudoInstruction>(generateTransitionLabel(transition),""));
-            char write = transition->getWright();
-            if (write != '*') {//if we are writing something then wright it
-                result.emplace_back(std::make_unique<PutInstruction>(write));
-            }
-            //move the head
-            if (transition->getMove() == 'L') {
-                result.emplace_back(MoveInstruction::left());
-            } else {
-                result.emplace_back(MoveInstruction::right());
-            }
-            //jump to the next transition
-            if (transition->isHalt()) {
-                //or halt if it is a halt transition
-                result.emplace_back(MoveInstruction::halt());
-            } else {
-                result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1),"go to state "+std::to_string(transition->getEndIndex()+1)));
+            if (transition->getMatchRule()[0] != '*') {//dont bother writing the wild card transitions
+                //put in the transition label
+                result.emplace_back(std::make_unique<LabelSudoInstruction>(generateTransitionLabel(transition),""));
+                char write = transition->getWright();
+                if (write != '*') {//if we are writing something then wright it
+                    result.emplace_back(std::make_unique<PutInstruction>(write));
+                }
+                //move the head
+                if (transition->getMove() == 'L') {
+                    result.emplace_back(MoveInstruction::left());
+                } else {
+                    result.emplace_back(MoveInstruction::right());
+                }
+                //jump to the next transition
+                if (transition->isHalt()) {
+                    //or halt if it is a halt transition
+                    result.emplace_back(MoveInstruction::halt());
+                } else {
+                    result.emplace_back(std::make_unique<JumpInstruction>(std::to_string(transition->getEndIndex()+1),"go to state "+std::to_string(transition->getEndIndex()+1)));
+                }
             }
         }
 
@@ -281,6 +294,7 @@ void optimizeAssembly( std::vector<std::unique_ptr<AssemblyInstruction>> &assemb
     //if the instruction right adder a label is a fail or halt, replace all non conditional jumps to that label with the fail / halt instruction
     //if a label is used only once for a single unconditional jump, inline that label
     //if a fail / halt immediately follows an unconditioned jump, remove it
+    //if a fail / halt immediately follow a fail / halt, get rid of it
 }
 
 void writeAssemblyToFile(const std::vector<std::unique_ptr<AssemblyInstruction>>& assembly_instructions, std::string &filename) {
