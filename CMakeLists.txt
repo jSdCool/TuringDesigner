@@ -37,7 +37,9 @@ add_executable(${CMAKE_PROJECT_NAME} ${APP_SOURCES}
         src/tinyfiledialogs.c
         src/json.hpp
         src/Tape.cpp
-        src/Tape.hpp)
+        src/Tape.hpp
+        src/assemble.cpp
+        src/assemble.hpp)
 
 add_dependencies(${CMAKE_PROJECT_NAME} copy_assets)
 
